@@ -12,6 +12,8 @@ import { uploadHistory } from './services/uploadHistory.js';
 import { ActivityLogService } from './services/activityLogService.js';
 import { SpreadsheetLogger } from './services/spreadsheetLogger.js';
 import { PinterestApiService } from './services/pinterestApiService.js';
+import { autoQueueProcessor } from './services/autoQueueProcessor.js';
+import { SupabaseSyncService } from './services/supabaseSyncService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,6 +42,13 @@ publisherEngine.on('published', record => {
   broadcastSSE('published', record);
   broadcastSSE('activity_update', ActivityLogService.getSevenDayActivity());
 });
+
+autoQueueProcessor.on('log', logEntry => broadcastSSE('log', logEntry));
+autoQueueProcessor.on('queued', queuedItem => {
+  broadcastSSE('queued', queuedItem);
+  broadcastSSE('activity_update', ActivityLogService.getSevenDayActivity());
+});
+
 
 /**
  * SSE endpoint for live updates
@@ -224,16 +233,35 @@ app.get('/api/spreadsheet/download', async (req, res) => {
   }
 });
 
+/**
+ * Supabase Queue Status Endpoint
+ */
+app.get('/api/supabase/queue', async (req, res) => {
+  try {
+    const queueStatus = await SupabaseSyncService.getQueueStatus();
+    res.json({
+      success: true,
+      ...queueStatus
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Startup check & spreadsheet initialization
 SpreadsheetLogger.updateExcel(uploadHistory.getAll()).catch(() => {});
 
+// Start background auto-queue processor watcher (Ollama -> Supabase -> Auto delete)
+autoQueueProcessor.startWatcher(5000);
 
 app.listen(CONFIG.port, CONFIG.host, () => {
   console.log(`\n================================================================`);
-  console.log(`  Pinterest Publisher Machine (12-Step Pipeline with AI Verifier)`);
+  console.log(`  Pinterest Publisher Machine (Ollama + Supabase Cloud Engine)`);
   console.log(`  Source Images:  ${IMAGES_DIR}`);
   console.log(`  Ollama Model:   ${CONFIG.ollamaModel}`);
   console.log(`  Publish Slots:  ${getPublishSlots().join(', ')}`);
+  console.log(`  Supabase Cloud: ${process.env.SUPABASE_URL || 'Configured'}`);
   console.log(`  Server:         http://${CONFIG.host}:${CONFIG.port}`);
   console.log(`================================================================\n`);
 });
+

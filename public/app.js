@@ -8,6 +8,7 @@ const elements = {
   headerSubtitle: document.getElementById('headerSubtitle'),
   nextSlotText: document.getElementById('nextSlotText'),
   waitingCountText: document.getElementById('waitingCountText'),
+  supabaseQueueCountText: document.getElementById('supabaseQueueCountText'),
   pinterestStatusPill: document.getElementById('pinterestStatusPill'),
   pinterestStatusDot: document.getElementById('pinterestStatusDot'),
   pinterestStatusText: document.getElementById('pinterestStatusText'),
@@ -26,8 +27,21 @@ async function init() {
   setupEventListeners();
   setupSSE();
   handleUrlParams();
-  await Promise.all([loadActivity(), checkPinterestAuth()]);
+  await Promise.all([loadActivity(), checkPinterestAuth(), loadSupabaseQueue()]);
 }
+
+async function loadSupabaseQueue() {
+  try {
+    const res = await fetch('/api/supabase/queue');
+    const data = await res.json();
+    if (elements.supabaseQueueCountText && data.count !== undefined) {
+      elements.supabaseQueueCountText.textContent = `${data.count} ready`;
+    }
+  } catch (err) {
+    console.warn('Could not fetch Supabase queue:', err);
+  }
+}
+
 
 function handleUrlParams() {
   const params = new URLSearchParams(window.location.search);
@@ -97,8 +111,15 @@ function setupSSE() {
 
     eventSource.addEventListener('published', () => {
       loadActivity();
+      loadSupabaseQueue();
+    });
+
+    eventSource.addEventListener('queued', () => {
+      loadActivity();
+      loadSupabaseQueue();
     });
   } catch (err) {
+
     console.warn('SSE connection warning:', err);
   }
 }

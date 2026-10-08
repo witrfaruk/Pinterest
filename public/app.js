@@ -27,82 +27,7 @@ const LOCK_SCREEN_HTML = `
   </div>
 `;
 
-const elements = {
-  // Main
-  mainAppContainer: document.getElementById('mainAppContainer'),
-  activityFeed: document.getElementById('activityFeed'),
-  btnTriggerNow: document.getElementById('btnTriggerNow'),
-  btnSeeAllPosts: document.getElementById('btnSeeAllPosts'),
-  btnQueueCount: document.getElementById('btnQueueCount'),
-  headerSubtitle: document.getElementById('headerSubtitle'),
-  nextSlotText: document.getElementById('nextSlotText'),
-  waitingCountText: document.getElementById('waitingCountText'),
-  supabaseQueueCountText: document.getElementById('supabaseQueueCountText'),
-  cloudQueuePill: document.getElementById('cloudQueuePill'),
-  pinterestStatusPill: document.getElementById('pinterestStatusPill'),
-  pinterestStatusDot: document.getElementById('pinterestStatusDot'),
-  pinterestStatusText: document.getElementById('pinterestStatusText'),
-  btnLockNow: document.getElementById('btnLockNow'),
-  lockCountdownText: document.getElementById('lockCountdownText'),
-  
-  // Security Lock
-  lockScreenOverlay: document.getElementById('lockScreenOverlay'),
-  inputLockPassword: document.getElementById('inputLockPassword'),
-  lockErrorMsg: document.getElementById('lockErrorMsg'),
-  btnUnlock: document.getElementById('btnUnlock'),
-
-  // Tabs
-  tabSchedule: document.getElementById('tabSchedule'),
-  tabQueue: document.getElementById('tabQueue'),
-  tabQueueCountBadge: document.getElementById('tabQueueCountBadge'),
-  scheduleView: document.getElementById('scheduleView'),
-  queueView: document.getElementById('queueView'),
-  
-  // Queue Grids
-  queuePostsGrid: document.getElementById('queuePostsGrid'),
-  modalPostsGrid: document.getElementById('modalPostsGrid'),
-  inputQueueSearch: document.getElementById('inputQueueSearch'),
-  inputModalSearch: document.getElementById('inputModalSearch'),
-  boardFilterChips: document.getElementById('boardFilterChips'),
-  modalBoardFilterChips: document.getElementById('modalBoardFilterChips'),
-  countFilterAll: document.getElementById('countFilterAll'),
-  modalQueueCountBadge: document.getElementById('modalQueueCountBadge'),
-
-  // Upload Modal
-  btnOpenUploadModal: document.getElementById('btnOpenUploadModal'),
-  uploadPinModal: document.getElementById('uploadPinModal'),
-  btnCloseUploadModal: document.getElementById('btnCloseUploadModal'),
-  inputPinFile: document.getElementById('inputPinFile'),
-  dropzonePrompt: document.getElementById('dropzonePrompt'),
-  dropzonePreview: document.getElementById('dropzonePreview'),
-  previewImageEl: document.getElementById('previewImageEl'),
-  btnAiAutoAnalyze: document.getElementById('btnAiAutoAnalyze'),
-  aiAutoAnalyzeText: document.getElementById('aiAutoAnalyzeText'),
-  uploadTitle: document.getElementById('uploadTitle'),
-  uploadBoard: document.getElementById('uploadBoard'),
-  uploadDescription: document.getElementById('uploadDescription'),
-  uploadAltText: document.getElementById('uploadAltText'),
-  uploadTags: document.getElementById('uploadTags'),
-  btnSubmitUpload: document.getElementById('btnSubmitUpload'),
-  uploadAlertMsg: document.getElementById('uploadAlertMsg'),
-  titleCharCount: document.getElementById('titleCharCount'),
-  descCharCount: document.getElementById('descCharCount'),
-  altCharCount: document.getElementById('altCharCount'),
-
-  // Modals
-  allPostsModal: document.getElementById('allPostsModal'),
-  btnClosePostsModal: document.getElementById('btnClosePostsModal'),
-  authModal: document.getElementById('authModal'),
-  btnCloseModal: document.getElementById('btnCloseModal'),
-  inputAccessToken: document.getElementById('inputAccessToken'),
-  inputAppId: document.getElementById('inputAppId'),
-  inputAppSecret: document.getElementById('inputAppSecret'),
-  btnSaveToken: document.getElementById('btnSaveToken'),
-  btnDisconnect: document.getElementById('btnDisconnect'),
-  modalStatusAlert: document.getElementById('modalStatusAlert')
-};
-
-// Global state
+// Global State
 let cachedQueueItems = [];
 let currentFilterBoard = 'all';
 let currentSearchQuery = '';
@@ -114,6 +39,7 @@ const AUTO_LOCK_SECONDS = 300; // 5 minutes
 let remainingLockSeconds = AUTO_LOCK_SECONDS;
 let isDashboardLocked = true;
 let lockInterval = null;
+let isEnforcing = false;
 
 // ==========================================================================
 // Authenticated API Fetch Helper (Zero-Trust Security)
@@ -121,7 +47,7 @@ let lockInterval = null;
 
 async function authenticatedFetch(url, options = {}) {
   const token = currentAuthToken || sessionStorage.getItem('finmunt_auth_token');
-  const headers = { credentials: 'omit', ...(options.headers || {}) };
+  const headers = { ...(options.headers || {}) };
   
   if (token) {
     headers['x-auth-token'] = token;
@@ -130,7 +56,7 @@ async function authenticatedFetch(url, options = {}) {
   const response = await fetch(url, { ...options, headers });
   
   if (response.status === 401) {
-    console.warn('[Security] Unauthorized request to', url, '- Re-locking dashboard.');
+    console.warn('[Security] Unauthorized request to', url);
     lockDashboard();
     throw new Error('Authentication expired or required.');
   }
@@ -139,70 +65,60 @@ async function authenticatedFetch(url, options = {}) {
 }
 
 // ==========================================================================
-// Anti-Tamper Watchdog (MutationObserver & DevTools Bypass Protection)
+// Anti-Tamper Guard (DevTools Bypass & Deletion Protection)
 // ==========================================================================
 
 function enforceSecurityLockDOM() {
-  if (!isDashboardLocked) return;
+  if (!isDashboardLocked || isEnforcing) return;
+  isEnforcing = true;
 
-  // 1. Ensure mainAppContainer is strictly hidden and disabled
-  const mainApp = document.getElementById('mainAppContainer') || elements.mainAppContainer;
-  if (mainApp) {
-    mainApp.classList.add('dashboard-locked');
-    mainApp.style.setProperty('display', 'none', 'important');
-    mainApp.style.setProperty('visibility', 'hidden', 'important');
-    mainApp.style.setProperty('opacity', '0', 'important');
-    mainApp.style.setProperty('pointer-events', 'none', 'important');
-  }
+  try {
+    // 1. Ensure mainAppContainer has locked class
+    const mainApp = document.getElementById('mainAppContainer');
+    if (mainApp && !mainApp.classList.contains('dashboard-locked')) {
+      mainApp.classList.add('dashboard-locked');
+    }
 
-  // 2. Ensure lockScreenOverlay exists and is attached to DOM
-  let overlay = document.getElementById('lockScreenOverlay');
-  if (!overlay || !document.body.contains(overlay)) {
-    overlay = document.createElement('div');
-    overlay.id = 'lockScreenOverlay';
-    overlay.className = 'lock-screen-overlay';
-    overlay.innerHTML = LOCK_SCREEN_HTML;
-    document.body.prepend(overlay);
-    elements.lockScreenOverlay = overlay;
-    elements.inputLockPassword = document.getElementById('inputLockPassword');
-    elements.lockErrorMsg = document.getElementById('lockErrorMsg');
-    elements.btnUnlock = document.getElementById('btnUnlock');
+    // 2. Ensure lockScreenOverlay exists
+    let overlay = document.getElementById('lockScreenOverlay');
+    if (!overlay || !document.body.contains(overlay)) {
+      overlay = document.createElement('div');
+      overlay.id = 'lockScreenOverlay';
+      overlay.className = 'lock-screen-overlay';
+      overlay.innerHTML = LOCK_SCREEN_HTML;
+      document.body.prepend(overlay);
+    } else {
+      if (overlay.classList.contains('__web-inspector-hide-shortcut__')) {
+        overlay.classList.remove('__web-inspector-hide-shortcut__');
+      }
+      if (overlay.classList.contains('hidden')) {
+        overlay.classList.remove('hidden');
+      }
+    }
+  } catch (err) {
+    console.warn('Enforce guard notice:', err);
+  } finally {
+    isEnforcing = false;
   }
-
-  // 3. Strip inspector hide shortcuts & force full-screen visibility
-  if (overlay.classList.contains('__web-inspector-hide-shortcut__')) {
-    overlay.classList.remove('__web-inspector-hide-shortcut__');
-  }
-  if (overlay.classList.contains('hidden')) {
-    overlay.classList.remove('hidden');
-  }
-  overlay.style.setProperty('display', 'flex', 'important');
-  overlay.style.setProperty('visibility', 'visible', 'important');
-  overlay.style.setProperty('opacity', '1', 'important');
-  overlay.style.setProperty('pointer-events', 'auto', 'important');
-  overlay.style.setProperty('z-index', '2147483647', 'important');
 }
 
 function setupTamperWatchdog() {
   const observer = new MutationObserver(() => {
-    if (isDashboardLocked) {
+    if (isDashboardLocked && !isEnforcing) {
       enforceSecurityLockDOM();
     }
   });
 
-  observer.observe(document.documentElement, {
+  observer.observe(document.body, {
     childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['style', 'class', 'hidden']
+    subtree: false
   });
 
-  // Continuous background guard
   setInterval(() => {
-    if (isDashboardLocked) {
+    if (isDashboardLocked && !isEnforcing) {
       enforceSecurityLockDOM();
     }
-  }, 200);
+  }, 1000);
 }
 
 // ==========================================================================
@@ -210,11 +126,11 @@ function setupTamperWatchdog() {
 // ==========================================================================
 
 async function init() {
-  setupTamperWatchdog();
   setupEventListeners();
   setupSSE();
   handleUrlParams();
   checkInitialAuth();
+  setupTamperWatchdog();
 }
 
 // ==========================================================================
@@ -242,30 +158,30 @@ function lockDashboard() {
   sessionStorage.removeItem('finmunt_auth_expires_at');
   if (lockInterval) clearInterval(lockInterval);
 
-  // Clear in-memory cache and hide dashboard
   cachedQueueItems = [];
-  if (elements.mainAppContainer) {
-    elements.mainAppContainer.classList.add('dashboard-locked');
-    elements.mainAppContainer.style.display = 'none';
+
+  const mainApp = document.getElementById('mainAppContainer');
+  if (mainApp) {
+    mainApp.classList.add('dashboard-locked');
   }
 
-  const overlay = document.getElementById('lockScreenOverlay') || elements.lockScreenOverlay;
+  const overlay = document.getElementById('lockScreenOverlay');
   if (overlay) {
     overlay.classList.remove('hidden');
-    overlay.style.display = 'flex';
+    overlay.classList.remove('__web-inspector-hide-shortcut__');
   }
 
-  const input = document.getElementById('inputLockPassword') || elements.inputLockPassword;
+  const input = document.getElementById('inputLockPassword');
   if (input) {
     input.value = '';
-    setTimeout(() => input.focus(), 150);
+    setTimeout(() => input.focus(), 100);
   }
 
-  const errEl = document.getElementById('lockErrorMsg') || elements.lockErrorMsg;
+  const errEl = document.getElementById('lockErrorMsg');
   if (errEl) errEl.style.display = 'none';
 
-  if (elements.lockCountdownText) elements.lockCountdownText.textContent = '00:00';
-  enforceSecurityLockDOM();
+  const timerEl = document.getElementById('lockCountdownText');
+  if (timerEl) timerEl.textContent = '00:00';
 }
 
 function unlockDashboard(token) {
@@ -277,22 +193,19 @@ function unlockDashboard(token) {
   sessionStorage.setItem('finmunt_auth_active', 'true');
   sessionStorage.setItem('finmunt_auth_expires_at', String(Date.now() + (AUTO_LOCK_SECONDS * 1000)));
 
-  const overlay = document.getElementById('lockScreenOverlay') || elements.lockScreenOverlay;
+  const overlay = document.getElementById('lockScreenOverlay');
   if (overlay) {
     overlay.classList.add('hidden');
-    overlay.style.display = 'none';
   }
 
-  const mainApp = document.getElementById('mainAppContainer') || elements.mainAppContainer;
+  const mainApp = document.getElementById('mainAppContainer');
   if (mainApp) {
     mainApp.classList.remove('dashboard-locked');
-    mainApp.style.removeProperty('display');
-    mainApp.style.display = 'block';
   }
 
   startLockCountdown();
 
-  // Load fresh secure data
+  // Load fresh verified data
   loadActivity();
   checkPinterestAuth();
   loadSupabaseQueue();
@@ -323,16 +236,17 @@ function resetLockTimerOnActivity() {
 function updateLockCountdownDisplay() {
   const mins = Math.floor(remainingLockSeconds / 60);
   const secs = remainingLockSeconds % 60;
-  if (elements.lockCountdownText) {
-    elements.lockCountdownText.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  const el = document.getElementById('lockCountdownText');
+  if (el) {
+    el.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   }
 }
 
 window.handleUnlock = async function(e) {
   if (e) e.preventDefault();
-  const input = document.getElementById('inputLockPassword') || elements.inputLockPassword;
-  const btn = document.getElementById('btnUnlock') || elements.btnUnlock;
-  const errEl = document.getElementById('lockErrorMsg') || elements.lockErrorMsg;
+  const input = document.getElementById('inputLockPassword');
+  const btn = document.getElementById('btnUnlock');
+  const errEl = document.getElementById('lockErrorMsg');
 
   const password = input ? input.value : '';
   if (btn) {
@@ -375,7 +289,7 @@ window.handleUnlock = async function(e) {
 };
 
 window.togglePasswordVisibility = function() {
-  const input = document.getElementById('inputLockPassword') || elements.inputLockPassword;
+  const input = document.getElementById('inputLockPassword');
   if (input) {
     input.type = input.type === 'password' ? 'text' : 'password';
   }
@@ -386,28 +300,45 @@ window.togglePasswordVisibility = function() {
 // ==========================================================================
 
 function openUploadModal() {
-  elements.uploadPinModal.style.display = 'flex';
+  const modal = document.getElementById('uploadPinModal');
+  if (modal) modal.style.display = 'flex';
   resetUploadForm();
 }
 
 function closeUploadModal() {
-  elements.uploadPinModal.style.display = 'none';
+  const modal = document.getElementById('uploadPinModal');
+  if (modal) modal.style.display = 'none';
   resetUploadForm();
 }
 
 function resetUploadForm() {
   selectedUploadFile = null;
-  elements.inputPinFile.value = '';
-  elements.dropzonePrompt.style.display = 'block';
-  elements.dropzonePreview.style.display = 'none';
-  elements.previewImageEl.src = '';
-  elements.uploadTitle.value = '';
-  elements.uploadDescription.value = '';
-  elements.uploadAltText.value = '';
-  elements.uploadTags.value = '';
-  elements.uploadAlertMsg.style.display = 'none';
-  elements.btnSubmitUpload.disabled = false;
-  elements.btnSubmitUpload.textContent = '🚀 Push to Supabase Cloud Queue';
+  const inputPinFile = document.getElementById('inputPinFile');
+  if (inputPinFile) inputPinFile.value = '';
+
+  const prompt = document.getElementById('dropzonePrompt');
+  if (prompt) prompt.style.display = 'block';
+
+  const preview = document.getElementById('dropzonePreview');
+  if (preview) preview.style.display = 'none';
+
+  const previewImg = document.getElementById('previewImageEl');
+  if (previewImg) previewImg.src = '';
+
+  const fields = ['uploadTitle', 'uploadDescription', 'uploadAltText', 'uploadTags'];
+  fields.forEach(f => {
+    const el = document.getElementById(f);
+    if (el) el.value = '';
+  });
+
+  const alertMsg = document.getElementById('uploadAlertMsg');
+  if (alertMsg) alertMsg.style.display = 'none';
+
+  const submitBtn = document.getElementById('btnSubmitUpload');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '🚀 Push to Supabase Cloud Queue';
+  }
   updateCharCounters();
 }
 
@@ -418,34 +349,45 @@ window.handleFileSelected = function(e) {
   selectedUploadFile = file;
   const reader = new FileReader();
   reader.onload = (event) => {
-    elements.previewImageEl.src = event.target.result;
-    elements.dropzonePrompt.style.display = 'none';
-    elements.dropzonePreview.style.display = 'flex';
+    const previewImg = document.getElementById('previewImageEl');
+    if (previewImg) previewImg.src = event.target.result;
+    const prompt = document.getElementById('dropzonePrompt');
+    if (prompt) prompt.style.display = 'none';
+    const preview = document.getElementById('dropzonePreview');
+    if (preview) preview.style.display = 'flex';
   };
   reader.readAsDataURL(file);
 };
 
 window.removeSelectedFile = function(e) {
-  e.stopPropagation();
+  if (e) e.stopPropagation();
   selectedUploadFile = null;
-  elements.inputPinFile.value = '';
-  elements.dropzonePrompt.style.display = 'block';
-  elements.dropzonePreview.style.display = 'none';
-  elements.previewImageEl.src = '';
+  const input = document.getElementById('inputPinFile');
+  if (input) input.value = '';
+  const prompt = document.getElementById('dropzonePrompt');
+  if (prompt) prompt.style.display = 'block';
+  const preview = document.getElementById('dropzonePreview');
+  if (preview) preview.style.display = 'none';
+  const previewImg = document.getElementById('previewImageEl');
+  if (previewImg) previewImg.src = '';
 };
 
 window.updateCharCounters = function() {
-  const titleLen = (elements.uploadTitle.value || '').length;
-  const descLen = (elements.uploadDescription.value || '').length;
-  const altLen = (elements.uploadAltText.value || '').length;
+  const titleEl = document.getElementById('uploadTitle');
+  const descEl = document.getElementById('uploadDescription');
+  const altEl = document.getElementById('uploadAltText');
 
-  elements.titleCharCount.textContent = `${titleLen}/100`;
-  elements.descCharCount.textContent = `${descLen}/500`;
-  elements.altCharCount.textContent = `${altLen}/500`;
+  const titleLen = (titleEl?.value || '').length;
+  const descLen = (descEl?.value || '').length;
+  const altLen = (altEl?.value || '').length;
 
-  elements.titleCharCount.style.color = titleLen > 100 ? 'var(--pinterest-red)' : 'var(--text-subtle)';
-  elements.descCharCount.style.color = descLen > 500 ? 'var(--pinterest-red)' : 'var(--text-subtle)';
-  elements.altCharCount.style.color = altLen > 500 ? 'var(--pinterest-red)' : 'var(--text-subtle)';
+  const titleCnt = document.getElementById('titleCharCount');
+  const descCnt = document.getElementById('descCharCount');
+  const altCnt = document.getElementById('altCharCount');
+
+  if (titleCnt) titleCnt.textContent = `${titleLen}/100`;
+  if (descCnt) descCnt.textContent = `${descLen}/500`;
+  if (altCnt) altCnt.textContent = `${altLen}/500`;
 };
 
 window.runAiAutoAnalyze = async function() {
@@ -454,9 +396,13 @@ window.runAiAutoAnalyze = async function() {
     return;
   }
 
-  elements.btnAiAutoAnalyze.disabled = true;
-  elements.aiAutoAnalyzeText.textContent = 'Analyzing image with Ollama Vision...';
-  elements.uploadAlertMsg.style.display = 'none';
+  const btn = document.getElementById('btnAiAutoAnalyze');
+  const btnText = document.getElementById('aiAutoAnalyzeText');
+  if (btn) btn.disabled = true;
+  if (btnText) btnText.textContent = 'Analyzing image with Ollama Vision...';
+
+  const alertMsg = document.getElementById('uploadAlertMsg');
+  if (alertMsg) alertMsg.style.display = 'none';
 
   try {
     const formData = new FormData();
@@ -470,14 +416,19 @@ window.runAiAutoAnalyze = async function() {
 
     if (!res.ok) throw new Error(data.error || 'AI Analysis failed');
 
-    elements.uploadTitle.value = data.title || '';
-    elements.uploadDescription.value = data.description || '';
-    elements.uploadAltText.value = data.altText || '';
-    elements.uploadTags.value = Array.isArray(data.tags) ? data.tags.join(', ') : (data.tags || '');
+    const titleEl = document.getElementById('uploadTitle');
+    const descEl = document.getElementById('uploadDescription');
+    const altEl = document.getElementById('uploadAltText');
+    const tagsEl = document.getElementById('uploadTags');
+    const boardEl = document.getElementById('uploadBoard');
 
-    // Select the board in dropdown
-    if (data.boardId) {
-      for (const opt of elements.uploadBoard.options) {
+    if (titleEl) titleEl.value = data.title || '';
+    if (descEl) descEl.value = data.description || '';
+    if (altEl) altEl.value = data.altText || '';
+    if (tagsEl) tagsEl.value = Array.isArray(data.tags) ? data.tags.join(', ') : (data.tags || '');
+
+    if (data.boardId && boardEl) {
+      for (const opt of boardEl.options) {
         if (opt.value.startsWith(data.boardId) || opt.text.toLowerCase() === (data.boardName || '').toLowerCase()) {
           opt.selected = true;
           break;
@@ -490,8 +441,8 @@ window.runAiAutoAnalyze = async function() {
   } catch (err) {
     showUploadAlert('error', `AI Analysis error: ${err.message}`);
   } finally {
-    elements.btnAiAutoAnalyze.disabled = false;
-    elements.aiAutoAnalyzeText.textContent = 'Auto-Fill with AI (Ollama Vision)';
+    if (btn) btn.disabled = false;
+    if (btnText) btnText.textContent = 'Auto-Fill with AI (Ollama Vision)';
   }
 };
 
@@ -501,14 +452,18 @@ window.submitUploadPin = async function() {
     return;
   }
 
-  const title = elements.uploadTitle.value.trim();
-  const description = elements.uploadDescription.value.trim();
-  const altText = elements.uploadAltText.value.trim();
-  const tags = elements.uploadTags.value.trim();
-  const [boardId, boardName] = elements.uploadBoard.value.split('|');
+  const title = (document.getElementById('uploadTitle')?.value || '').trim();
+  const description = (document.getElementById('uploadDescription')?.value || '').trim();
+  const altText = (document.getElementById('uploadAltText')?.value || '').trim();
+  const tags = (document.getElementById('uploadTags')?.value || '').trim();
+  const boardVal = document.getElementById('uploadBoard')?.value || '|';
+  const [boardId, boardName] = boardVal.split('|');
 
-  elements.btnSubmitUpload.disabled = true;
-  elements.btnSubmitUpload.textContent = 'Pushing to Supabase Cloud...';
+  const btn = document.getElementById('btnSubmitUpload');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Pushing to Supabase Cloud...';
+  }
 
   try {
     const formData = new FormData();
@@ -537,15 +492,19 @@ window.submitUploadPin = async function() {
     }, 1200);
   } catch (err) {
     showUploadAlert('error', `Upload error: ${err.message}`);
-    elements.btnSubmitUpload.disabled = false;
-    elements.btnSubmitUpload.textContent = '🚀 Push to Supabase Cloud Queue';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🚀 Push to Supabase Cloud Queue';
+    }
   }
 };
 
 function showUploadAlert(type, message) {
-  elements.uploadAlertMsg.className = `modal-alert ${type}`;
-  elements.uploadAlertMsg.textContent = message;
-  elements.uploadAlertMsg.style.display = 'block';
+  const el = document.getElementById('uploadAlertMsg');
+  if (!el) return;
+  el.className = `modal-alert ${type}`;
+  el.textContent = message;
+  el.style.display = 'block';
 }
 
 // ==========================================================================
@@ -563,14 +522,20 @@ async function loadSupabaseQueue() {
       cachedQueueItems = data.items;
       const count = data.items.length;
 
-      if (elements.supabaseQueueCountText) elements.supabaseQueueCountText.textContent = `${count} ready`;
-      if (elements.btnQueueCount) elements.btnQueueCount.textContent = count;
-      if (elements.tabQueueCountBadge) elements.tabQueueCountBadge.textContent = count;
-      if (elements.modalQueueCountBadge) elements.modalQueueCountBadge.textContent = count;
-      if (elements.countFilterAll) elements.countFilterAll.textContent = count;
+      const queueText = document.getElementById('supabaseQueueCountText');
+      const btnCount = document.getElementById('btnQueueCount');
+      const tabBadge = document.getElementById('tabQueueCountBadge');
+      const modalBadge = document.getElementById('modalQueueCountBadge');
+      const filterAll = document.getElementById('countFilterAll');
 
-      renderQueueCards(elements.queuePostsGrid);
-      renderQueueCards(elements.modalPostsGrid);
+      if (queueText) queueText.textContent = `${count} ready`;
+      if (btnCount) btnCount.textContent = count;
+      if (tabBadge) tabBadge.textContent = count;
+      if (modalBadge) modalBadge.textContent = count;
+      if (filterAll) filterAll.textContent = count;
+
+      renderQueueCards(document.getElementById('queuePostsGrid'));
+      renderQueueCards(document.getElementById('modalPostsGrid'));
     }
   } catch (err) {
     console.warn('Could not fetch Supabase queue:', err.message);
@@ -597,7 +562,7 @@ function renderQueueCards(container) {
       <div class="loading-state">
         <p style="font-weight: 600; font-size: 15px;">No pins match your current filter</p>
         <span style="font-size: 13px; color: var(--text-muted);">
-          ${cachedQueueItems.length === 0 ? 'Click "+ Upload Pin" or drop images in Images/ folder.' : 'Try changing the search or board filter.'}
+          ${cachedQueueItems.length === 0 ? 'Click "+ Upload Pin" to push pins.' : 'Try changing the search or board filter.'}
         </span>
       </div>
     `;
@@ -693,24 +658,27 @@ async function loadActivity() {
     if (!res.ok) throw new Error('Failed to fetch activity');
     const data = await res.json();
 
-    if (data.nextSlot && elements.nextSlotText) {
-      elements.nextSlotText.textContent = data.nextSlot.displayText;
+    const nextSlotEl = document.getElementById('nextSlotText');
+    if (data.nextSlot && nextSlotEl) {
+      nextSlotEl.textContent = data.nextSlot.displayText;
     }
 
-    if (data.waitingImagesCount !== undefined && elements.waitingCountText) {
-      elements.waitingCountText.textContent = `${data.waitingImagesCount} images`;
+    const waitCountEl = document.getElementById('waitingCountText');
+    if (data.waitingImagesCount !== undefined && waitCountEl) {
+      waitCountEl.textContent = `${data.waitingImagesCount} images`;
     }
 
-    if (elements.btnTriggerNow) {
+    const triggerBtn = document.getElementById('btnTriggerNow');
+    if (triggerBtn) {
       if (data.isBusy) {
-        elements.btnTriggerNow.disabled = true;
-        elements.btnTriggerNow.innerHTML = `
+        triggerBtn.disabled = true;
+        triggerBtn.innerHTML = `
           <span class="pinterest-spinner" style="width:14px;height:14px;border-width:2px;border-top-color:#fff;border-color:rgba(255,255,255,0.3)"></span>
           Publishing...
         `;
       } else {
-        elements.btnTriggerNow.disabled = false;
-        elements.btnTriggerNow.innerHTML = `
+        triggerBtn.disabled = false;
+        triggerBtn.innerHTML = `
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
           Trigger Slot
         `;
@@ -721,8 +689,9 @@ async function loadActivity() {
       renderActivity(data.activity.days);
     }
   } catch (err) {
-    if (elements.activityFeed && !isDashboardLocked) {
-      elements.activityFeed.innerHTML = `
+    const feed = document.getElementById('activityFeed');
+    if (feed && !isDashboardLocked) {
+      feed.innerHTML = `
         <div class="loading-state">
           <p>Error loading activity: ${escapeHtml(err.message)}</p>
         </div>
@@ -732,9 +701,11 @@ async function loadActivity() {
 }
 
 function renderActivity(days) {
-  if (!elements.activityFeed) return;
+  const feed = document.getElementById('activityFeed');
+  if (!feed) return;
+
   if (!days || days.length === 0) {
-    elements.activityFeed.innerHTML = `
+    feed.innerHTML = `
       <div class="loading-state">
         <p>No activity records available yet.</p>
       </div>
@@ -742,7 +713,7 @@ function renderActivity(days) {
     return;
   }
 
-  elements.activityFeed.innerHTML = days.map(day => {
+  feed.innerHTML = days.map(day => {
     const isComplete = day.successCount === day.totalSlots && day.totalSlots > 0;
     const countBadgeClass = isComplete ? 'day-count-badge day-count-complete' : 'day-count-badge';
 
@@ -811,31 +782,42 @@ function renderSlotItem(slot) {
 async function checkPinterestAuth() {
   if (isDashboardLocked) return;
 
+  const dot = document.getElementById('pinterestStatusDot');
+  const text = document.getElementById('pinterestStatusText');
+  const pill = document.getElementById('pinterestStatusPill');
+
   try {
     const res = await authenticatedFetch('/api/pinterest/status');
     const data = await res.json();
 
     if (data.connected) {
-      elements.pinterestStatusDot.style.backgroundColor = '#22c55e';
-      elements.pinterestStatusDot.className = 'status-pill-dot dot-pulsing';
-      elements.pinterestStatusText.innerHTML = `Pinterest: <strong>@${escapeHtml(data.username || 'Finmunt')}</strong>`;
-      elements.pinterestStatusPill.title = `Connected to Pinterest (@${data.username}). Click to manage credentials.`;
+      if (dot) {
+        dot.style.backgroundColor = '#22c55e';
+        dot.className = 'status-pill-dot dot-pulsing';
+      }
+      if (text) text.innerHTML = `Pinterest: <strong>@${escapeHtml(data.username || 'Finmunt')}</strong>`;
+      if (pill) pill.title = `Connected to Pinterest (@${data.username}). Click to manage credentials.`;
     } else if (data.hasToken) {
-      elements.pinterestStatusDot.style.backgroundColor = '#ef4444';
-      elements.pinterestStatusDot.className = 'status-pill-dot';
-      elements.pinterestStatusText.innerHTML = `Pinterest: <strong>Invalid Token</strong>`;
-      elements.pinterestStatusPill.title = `Token Error: ${data.reason}. Click to re-authenticate.`;
+      if (dot) {
+        dot.style.backgroundColor = '#ef4444';
+        dot.className = 'status-pill-dot';
+      }
+      if (text) text.innerHTML = `Pinterest: <strong>Invalid Token</strong>`;
+      if (pill) pill.title = `Token Error: ${data.reason}. Click to re-authenticate.`;
     } else {
-      elements.pinterestStatusDot.style.backgroundColor = '#f59e0b';
-      elements.pinterestStatusDot.className = 'status-pill-dot';
-      elements.pinterestStatusText.innerHTML = `Pinterest: <strong>Connect API</strong>`;
-      elements.pinterestStatusPill.title = 'Click to connect Pinterest account';
+      if (dot) {
+        dot.style.backgroundColor = '#f59e0b';
+        dot.className = 'status-pill-dot';
+      }
+      if (text) text.innerHTML = `Pinterest: <strong>Connect API</strong>`;
+      if (pill) pill.title = 'Click to connect Pinterest account';
     }
   } catch (err) {
-    if (elements.pinterestStatusDot) {
-      elements.pinterestStatusDot.style.backgroundColor = '#ef4444';
-      elements.pinterestStatusText.innerHTML = `Pinterest: <strong>Offline</strong>`;
+    if (dot) {
+      dot.style.backgroundColor = '#ef4444';
+      dot.className = 'status-pill-dot';
     }
+    if (text) text.innerHTML = `Pinterest: <strong>Offline</strong>`;
   }
 }
 
@@ -865,7 +847,7 @@ function setupSSE() {
       }
     });
   } catch (err) {
-    console.warn('SSE connection warning:', err);
+    console.warn('SSE connection notice:', err);
   }
 }
 
@@ -883,26 +865,32 @@ function handleUrlParams() {
 }
 
 function openAuthModal() {
-  elements.authModal.style.display = 'flex';
+  const modal = document.getElementById('authModal');
+  if (modal) modal.style.display = 'flex';
 }
 
 function closeAuthModal() {
-  elements.authModal.style.display = 'none';
+  const modal = document.getElementById('authModal');
+  if (modal) modal.style.display = 'none';
 }
 
 function openPostsModal() {
-  elements.allPostsModal.style.display = 'flex';
-  renderQueueCards(elements.modalPostsGrid);
+  const modal = document.getElementById('allPostsModal');
+  if (modal) modal.style.display = 'flex';
+  renderQueueCards(document.getElementById('modalPostsGrid'));
 }
 
 function closePostsModal() {
-  elements.allPostsModal.style.display = 'none';
+  const modal = document.getElementById('allPostsModal');
+  if (modal) modal.style.display = 'none';
 }
 
 function showModalAlert(type, message) {
-  elements.modalStatusAlert.className = `modal-alert ${type}`;
-  elements.modalStatusAlert.textContent = message;
-  elements.modalStatusAlert.style.display = 'block';
+  const alertEl = document.getElementById('modalStatusAlert');
+  if (!alertEl) return;
+  alertEl.className = `modal-alert ${type}`;
+  alertEl.textContent = message;
+  alertEl.style.display = 'block';
 }
 
 function setupEventListeners() {
@@ -911,77 +899,86 @@ function setupEventListeners() {
     window.addEventListener(evt, resetLockTimerOnActivity, { passive: true });
   });
 
-  // Lock Now button
-  if (elements.btnLockNow) elements.btnLockNow.addEventListener('click', lockDashboard);
+  // Lock button
+  document.getElementById('btnLockNow')?.addEventListener('click', lockDashboard);
 
-  // Upload modal open/close
-  if (elements.btnOpenUploadModal) elements.btnOpenUploadModal.addEventListener('click', openUploadModal);
-  if (elements.btnCloseUploadModal) elements.btnCloseUploadModal.addEventListener('click', closeUploadModal);
-  if (elements.uploadPinModal) {
-    elements.uploadPinModal.addEventListener('click', (e) => {
-      if (e.target === elements.uploadPinModal) closeUploadModal();
+  // Upload modal triggers
+  document.getElementById('btnOpenUploadModal')?.addEventListener('click', openUploadModal);
+  document.getElementById('btnCloseUploadModal')?.addEventListener('click', closeUploadModal);
+  const uploadModal = document.getElementById('uploadPinModal');
+  if (uploadModal) {
+    uploadModal.addEventListener('click', (e) => {
+      if (e.target === uploadModal) closeUploadModal();
     });
   }
 
   // Trigger Slot Now
-  if (elements.btnTriggerNow) {
-    elements.btnTriggerNow.addEventListener('click', async () => {
-      try {
-        elements.btnTriggerNow.disabled = true;
-        elements.btnTriggerNow.textContent = 'Publishing...';
-        const res = await authenticatedFetch('/api/publish/trigger', { method: 'POST' });
-        const data = await res.json();
-        if (!res.ok) {
-          alert(data.error || 'Failed to trigger publishing');
-        }
-        setTimeout(() => {
-          loadActivity();
-          loadSupabaseQueue();
-        }, 1000);
-      } catch (err) {
-        alert(`Error: ${err.message}`);
+  document.getElementById('btnTriggerNow')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnTriggerNow');
+    try {
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Publishing...';
       }
-    });
-  }
+      const res = await authenticatedFetch('/api/publish/trigger', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to trigger publishing');
+      }
+      setTimeout(() => {
+        loadActivity();
+        loadSupabaseQueue();
+      }, 1000);
+    } catch (err) {
+      alert(`Error: ${err.message}`);
+    }
+  });
 
   // Tab switching
-  if (elements.tabSchedule && elements.tabQueue) {
-    elements.tabSchedule.addEventListener('click', () => {
-      elements.tabSchedule.classList.add('active');
-      elements.tabQueue.classList.remove('active');
-      elements.scheduleView.classList.add('active');
-      elements.queueView.classList.remove('active');
+  const tabSched = document.getElementById('tabSchedule');
+  const tabQ = document.getElementById('tabQueue');
+  const schedView = document.getElementById('scheduleView');
+  const qView = document.getElementById('queueView');
+
+  if (tabSched && tabQ && schedView && qView) {
+    tabSched.addEventListener('click', () => {
+      tabSched.classList.add('active');
+      tabQ.classList.remove('active');
+      schedView.classList.add('active');
+      qView.classList.remove('active');
     });
 
-    elements.tabQueue.addEventListener('click', () => {
-      elements.tabQueue.classList.add('active');
-      elements.tabSchedule.classList.remove('active');
-      elements.queueView.classList.add('active');
-      elements.scheduleView.classList.remove('active');
-      renderQueueCards(elements.queuePostsGrid);
+    tabQ.addEventListener('click', () => {
+      tabQ.classList.add('active');
+      tabSched.classList.remove('active');
+      qView.classList.add('active');
+      schedView.classList.remove('active');
+      renderQueueCards(document.getElementById('queuePostsGrid'));
     });
   }
 
-  // Open "See All Posts"
-  if (elements.btnSeeAllPosts) elements.btnSeeAllPosts.addEventListener('click', openPostsModal);
-  if (elements.cloudQueuePill) elements.cloudQueuePill.addEventListener('click', openPostsModal);
-  if (elements.btnClosePostsModal) elements.btnClosePostsModal.addEventListener('click', closePostsModal);
-  if (elements.allPostsModal) {
-    elements.allPostsModal.addEventListener('click', (e) => {
-      if (e.target === elements.allPostsModal) closePostsModal();
+  // Modals & see all posts
+  document.getElementById('btnSeeAllPosts')?.addEventListener('click', openPostsModal);
+  document.getElementById('cloudQueuePill')?.addEventListener('click', openPostsModal);
+  document.getElementById('btnClosePostsModal')?.addEventListener('click', closePostsModal);
+  const postsModal = document.getElementById('allPostsModal');
+  if (postsModal) {
+    postsModal.addEventListener('click', (e) => {
+      if (e.target === postsModal) closePostsModal();
     });
   }
 
   // Auth modal
-  if (elements.pinterestStatusPill) elements.pinterestStatusPill.addEventListener('click', openAuthModal);
-  if (elements.btnCloseModal) elements.btnCloseModal.addEventListener('click', closeAuthModal);
-  if (elements.authModal) {
-    elements.authModal.addEventListener('click', (e) => {
-      if (e.target === elements.authModal) closeAuthModal();
+  document.getElementById('pinterestStatusPill')?.addEventListener('click', openAuthModal);
+  document.getElementById('btnCloseModal')?.addEventListener('click', closeAuthModal);
+  const authMod = document.getElementById('authModal');
+  if (authMod) {
+    authMod.addEventListener('click', (e) => {
+      if (e.target === authMod) closeAuthModal();
     });
   }
 
-  // Filters & Search handlers
+  // Filters
   function attachFilterEvents(container) {
     if (!container) return;
     container.addEventListener('click', (e) => {
@@ -992,85 +989,83 @@ function setupEventListeners() {
       btn.classList.add('active');
       currentFilterBoard = btn.getAttribute('data-board') || 'all';
 
-      renderQueueCards(elements.queuePostsGrid);
-      renderQueueCards(elements.modalPostsGrid);
+      renderQueueCards(document.getElementById('queuePostsGrid'));
+      renderQueueCards(document.getElementById('modalPostsGrid'));
     });
   }
 
-  attachFilterEvents(elements.boardFilterChips);
-  attachFilterEvents(elements.modalBoardFilterChips);
+  attachFilterEvents(document.getElementById('boardFilterChips'));
+  attachFilterEvents(document.getElementById('modalBoardFilterChips'));
 
-  if (elements.inputQueueSearch) {
-    elements.inputQueueSearch.addEventListener('input', (e) => {
-      currentSearchQuery = e.target.value;
-      renderQueueCards(elements.queuePostsGrid);
-    });
-  }
+  document.getElementById('inputQueueSearch')?.addEventListener('input', (e) => {
+    currentSearchQuery = e.target.value;
+    renderQueueCards(document.getElementById('queuePostsGrid'));
+  });
 
-  if (elements.inputModalSearch) {
-    elements.inputModalSearch.addEventListener('input', (e) => {
-      currentSearchQuery = e.target.value;
-      renderQueueCards(elements.modalPostsGrid);
-    });
-  }
+  document.getElementById('inputModalSearch')?.addEventListener('input', (e) => {
+    currentSearchQuery = e.target.value;
+    renderQueueCards(document.getElementById('modalPostsGrid'));
+  });
 
   // Save Token
-  if (elements.btnSaveToken) {
-    elements.btnSaveToken.addEventListener('click', async () => {
-      const token = elements.inputAccessToken.value.trim();
-      const appId = elements.inputAppId.value.trim();
-      const appSecret = elements.inputAppSecret.value.trim();
+  document.getElementById('btnSaveToken')?.addEventListener('click', async () => {
+    const token = document.getElementById('inputAccessToken')?.value.trim();
+    const appId = document.getElementById('inputAppId')?.value.trim();
+    const appSecret = document.getElementById('inputAppSecret')?.value.trim();
+    const btn = document.getElementById('btnSaveToken');
 
-      elements.btnSaveToken.disabled = true;
-      elements.btnSaveToken.textContent = 'Testing connection...';
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Testing connection...';
+    }
 
-      try {
-        const res = await authenticatedFetch('/api/settings/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, appId, appSecret })
-        });
-        const data = await res.json();
+    try {
+      const res = await authenticatedFetch('/api/settings/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, appId, appSecret })
+      });
+      const data = await res.json();
 
-        if (data.connected) {
-          showModalAlert('success', `Connected successfully to Pinterest as @${data.username}!`);
-          setTimeout(() => {
-            closeAuthModal();
-            checkPinterestAuth();
-          }, 1500);
-        } else {
-          showModalAlert('error', `Connection failed: ${data.reason || 'Invalid credentials'}`);
-        }
-      } catch (err) {
-        showModalAlert('error', `Connection error: ${err.message}`);
-      } finally {
-        elements.btnSaveToken.disabled = false;
-        elements.btnSaveToken.textContent = 'Save & Test Connection';
-        checkPinterestAuth();
+      if (data.connected) {
+        showModalAlert('success', `Connected successfully to Pinterest as @${data.username}!`);
+        setTimeout(() => {
+          closeAuthModal();
+          checkPinterestAuth();
+        }, 1500);
+      } else {
+        showModalAlert('error', `Connection failed: ${data.reason || 'Invalid credentials'}`);
       }
-    });
-  }
+    } catch (err) {
+      showModalAlert('error', `Connection error: ${err.message}`);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Save & Test Connection';
+      }
+      checkPinterestAuth();
+    }
+  });
 
   // Disconnect Account
-  if (elements.btnDisconnect) {
-    elements.btnDisconnect.addEventListener('click', async () => {
-      if (!confirm('Are you sure you want to disconnect this Pinterest account?')) return;
-      try {
-        const res = await authenticatedFetch('/api/pinterest/disconnect', { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-          showModalAlert('success', 'Pinterest account disconnected successfully.');
-          elements.inputAccessToken.value = '';
-          setTimeout(() => {
-            closeAuthModal();
-            checkPinterestAuth();
-          }, 1000);
-        }
-      } catch (err) {
-        showModalAlert('error', `Disconnect error: ${err.message}`);
+  document.getElementById('btnDisconnect')?.addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to disconnect this Pinterest account?')) return;
+    try {
+      const res = await authenticatedFetch('/api/pinterest/disconnect', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showModalAlert('success', 'Pinterest account disconnected successfully.');
+        const tokenInput = document.getElementById('inputAccessToken');
+        if (tokenInput) tokenInput.value = '';
+        setTimeout(() => {
+          closeAuthModal();
+          checkPinterestAuth();
+        }, 1000);
       }
-    });
-  }
+    } catch (err) {
+      showModalAlert('error', `Disconnect error: ${err.message}`);
+    }
+  });
 }
 
 function escapeHtml(str) {

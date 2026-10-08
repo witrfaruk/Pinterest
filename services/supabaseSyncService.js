@@ -5,6 +5,13 @@ import { CONFIG } from '../config.js';
 
 let supabaseClient = null;
 
+// High-speed In-Memory Cache (5s TTL)
+let cachedQueue = null;
+let cachedQueueTime = 0;
+let cachedHistory = null;
+let cachedHistoryTime = 0;
+const CACHE_TTL_MS = 5000;
+
 export function getSupabaseClient() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
@@ -20,6 +27,13 @@ export function getSupabaseClient() {
 export class SupabaseSyncService {
   static getBucketName() {
     return process.env.SUPABASE_BUCKET || 'pinterest-queue';
+  }
+
+  static invalidateCache() {
+    cachedQueue = null;
+    cachedHistory = null;
+    cachedQueueTime = 0;
+    cachedHistoryTime = 0;
   }
 
   /**
@@ -51,6 +65,8 @@ export class SupabaseSyncService {
     const { data: urlData } = supabase.storage
       .from(bucket)
       .getPublicUrl(storagePath);
+
+    this.invalidateCache();
 
     return {
       storagePath,
@@ -95,13 +111,19 @@ export class SupabaseSyncService {
       throw new Error(`Failed to insert into pin_queue: ${error.message}`);
     }
 
+    this.invalidateCache();
     return data[0];
   }
 
   /**
-   * Fetch current queue status from Supabase (PENDING only)
+   * Fetch current queue status from Supabase (PENDING only, cached 5s)
    */
-  static async getQueueStatus() {
+  static async getQueueStatus(forceFresh = false) {
+    const now = Date.now();
+    if (!forceFresh && cachedQueue && (now - cachedQueueTime < CACHE_TTL_MS)) {
+      return cachedQueue;
+    }
+
     try {
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
@@ -111,16 +133,24 @@ export class SupabaseSyncService {
         .order('created_at', { ascending: true });
 
       if (error) return { count: 0, items: [], error: error.message };
-      return { count: data.length, items: data };
+      
+      cachedQueue = { count: data.length, items: data };
+      cachedQueueTime = Date.now();
+      return cachedQueue;
     } catch (err) {
       return { count: 0, items: [], error: err.message };
     }
   }
 
   /**
-   * Fetch published history from Supabase (COMPLETED pins)
+   * Fetch published history from Supabase (COMPLETED pins, cached 5s)
    */
-  static async getPublishedHistory() {
+  static async getPublishedHistory(forceFresh = false) {
+    const now = Date.now();
+    if (!forceFresh && cachedHistory && (now - cachedHistoryTime < CACHE_TTL_MS)) {
+      return cachedHistory;
+    }
+
     try {
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
@@ -130,7 +160,9 @@ export class SupabaseSyncService {
         .order('updated_at', { ascending: false });
 
       if (error) return [];
-      return data || [];
+      cachedHistory = data || [];
+      cachedHistoryTime = Date.now();
+      return cachedHistory;
     } catch (err) {
       return [];
     }
@@ -162,6 +194,8 @@ export class SupabaseSyncService {
           .eq('id', id);
       } catch (e) {}
     }
+
+    this.invalidateCache();
   }
 
   /**
@@ -182,5 +216,7 @@ export class SupabaseSyncService {
         await supabase.from('pin_queue').delete().eq('id', id);
       } catch (e) {}
     }
+
+    this.invalidateCache();
   }
 }

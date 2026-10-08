@@ -120,13 +120,19 @@ export class PinterestApiService {
   }
 
   /**
-   * Check connection and fetch authorized Pinterest account details
+   * Check connection and fetch authorized Pinterest account details (Cached 30s)
    */
-  static async checkAuth() {
+  static async checkAuth(forceFresh = false) {
     const token = CONFIG.pinterestAccessToken;
     if (!token) {
       return { connected: false, reason: 'PINTEREST_ACCESS_TOKEN is not set.' };
     }
+
+    const now = Date.now();
+    if (!forceFresh && this._cachedAuth && (now - this._cachedAuthTime < 30000)) {
+      return this._cachedAuth;
+    }
+
     try {
       const baseUrl = this.getBaseUrl();
       const response = await fetch(`${baseUrl}/user_account`, {
@@ -134,20 +140,24 @@ export class PinterestApiService {
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        return {
+        this._cachedAuth = {
           connected: false,
           status: response.status,
           reason: data.message || `Pinterest returned HTTP ${response.status}`
         };
+        this._cachedAuthTime = Date.now();
+        return this._cachedAuth;
       }
       const data = await response.json();
-      return {
+      this._cachedAuth = {
         connected: true,
         username: data.username,
         accountType: data.account_type,
         profileImage: data.profile_image,
         about: data.about
       };
+      this._cachedAuthTime = Date.now();
+      return this._cachedAuth;
     } catch (err) {
       return { connected: false, reason: err.message };
     }

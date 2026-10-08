@@ -11,6 +11,10 @@ export class ImageScanner {
    * Scan the fixed Images folder and return all unprocessed images
    */
   static async scanPendingImages() {
+    if (process.env.VERCEL) {
+      return { success: true, folder: '/tmp', pending: [], totalInFolder: 0, waitingCount: 0 };
+    }
+
     if (!fsSync.existsSync(IMAGES_DIR)) {
       await fs.mkdir(IMAGES_DIR, { recursive: true });
     }

@@ -209,10 +209,12 @@ function unlockDashboard(token) {
 
   startLockCountdown();
 
-  // Load fresh verified data
-  loadActivity();
-  checkPinterestAuth();
-  loadSupabaseQueue();
+  // Load fresh verified data in parallel for instant display
+  Promise.all([
+    loadActivity(),
+    checkPinterestAuth(),
+    loadSupabaseQueue()
+  ]);
 }
 
 function startLockCountdown() {
@@ -580,7 +582,7 @@ function renderQueueCards(container) {
     return `
       <article class="pin-card" data-id="${escapeHtml(pin.id)}">
         <div class="pin-card-media">
-          <img src="${escapeHtml(pin.image_url)}" alt="${escapeHtml(pin.alt_text || pin.title)}" class="pin-card-img" loading="lazy">
+          <img src="${escapeHtml(pin.image_url)}" alt="${escapeHtml(pin.alt_text || pin.title)}" class="pin-card-img" loading="lazy" decoding="async">
           <span class="pin-card-badge">#${idx + 1}</span>
         </div>
 
@@ -1001,14 +1003,26 @@ function setupEventListeners() {
   attachFilterEvents(document.getElementById('boardFilterChips'));
   attachFilterEvents(document.getElementById('modalBoardFilterChips'));
 
-  document.getElementById('inputQueueSearch')?.addEventListener('input', (e) => {
-    currentSearchQuery = e.target.value;
+  function debounce(fn, delay = 120) {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  const handleSearch = debounce((query) => {
+    currentSearchQuery = query;
     renderQueueCards(document.getElementById('queuePostsGrid'));
+    renderQueueCards(document.getElementById('modalPostsGrid'));
+  }, 100);
+
+  document.getElementById('inputQueueSearch')?.addEventListener('input', (e) => {
+    handleSearch(e.target.value);
   });
 
   document.getElementById('inputModalSearch')?.addEventListener('input', (e) => {
-    currentSearchQuery = e.target.value;
-    renderQueueCards(document.getElementById('modalPostsGrid'));
+    handleSearch(e.target.value);
   });
 
   // Save Token

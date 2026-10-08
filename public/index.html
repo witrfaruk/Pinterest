@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finmunt • Pinterest Automation</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="pinterest-app">
+    
+    <!-- Pinterest Header -->
+    <header class="pinterest-header">
+      <div class="header-brand">
+        <div class="pinterest-logo-badge">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.535.535 6.627 0 12-5.373 12-12S18.627 0 12 0z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title-row">
+            <h1 class="brand-title">Finmunt Automation</h1>
+            <span class="brand-pill">5 Daily Slots</span>
+          </div>
+          <p class="brand-subtitle" id="headerSubtitle">Rolling 7 calendar days &bull; Scheduled times: 09:00, 12:00, 15:00, 18:00, 21:00</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <a href="https://docs.google.com/spreadsheets/d/1mjlVzJsARnpRHLQV3FMdLQUtEQSUl02J2V1spmnDKLc/edit" target="_blank" rel="noopener noreferrer" class="btn-pinterest-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          Open Google Sheet
+        </a>
+        <button id="btnTriggerNow" class="btn-pinterest-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Trigger Slot Now
+        </button>
+      </div>
+    </header>
+
+    <!-- Info Status Pills Bar -->
+    <div class="status-pills-bar">
+      <div class="status-pill" id="pinterestStatusPill" style="cursor:pointer;" title="Click to view/configure Pinterest connection">
+        <span class="status-pill-dot" id="pinterestStatusDot" style="background-color:#e60023;"></span>
+        <span id="pinterestStatusText">Pinterest: <strong>Checking...</strong></span>
+      </div>
+      <div class="status-pill">
+        <span class="status-pill-dot dot-active"></span>
+        <span>Next Slot: <strong id="nextSlotText">Calculating...</strong></span>
+      </div>
+      <div class="status-pill">
+        <span>Waiting in Images: <strong id="waitingCountText">0</strong></span>
+      </div>
+      <div class="status-pill">
+        <span>Sheet: <strong>Finmunt</strong></span>
+      </div>
+    </div>
+
+    <!-- 7-Day Activity Feed -->
+    <main class="activity-feed" id="activityFeed">
+      <div class="loading-state">
+        <div class="pinterest-spinner"></div>
+        <p>Loading activity log...</p>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Pinterest Connection Modal -->
+  <div class="modal-overlay" id="authModal" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <div class="pinterest-logo-badge" style="width:36px;height:36px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.535.535 6.627 0 12-5.373 12-12S18.627 0 12 0z"/>
+            </svg>
+          </div>
+          <h3>Connect Pinterest API</h3>
+        </div>
+        <button class="btn-close" id="btnCloseModal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="modalStatusAlert" class="modal-alert" style="display:none;"></div>
+
+        <!-- Option A: Paste Token Directly -->
+        <div class="auth-section">
+          <h4>Option A: Direct Access Token</h4>
+          <p class="auth-help-text">From Pinterest Developer Portal &rarr; <strong>Generate Access Tokens</strong> &rarr; click <strong>Generate token</strong> &rarr; copy and paste token below:</p>
+          <div class="input-group">
+            <label>Access Token (pina_...)</label>
+            <input type="password" id="inputAccessToken" placeholder="Paste your Pinterest Access Token here" class="auth-input">
+          </div>
+        </div>
+
+        <div class="auth-divider"><span>OR</span></div>
+
+        <!-- Option B: OAuth App Details -->
+        <div class="auth-section">
+          <h4>Option B: 1-Click Pinterest OAuth</h4>
+          <p class="auth-help-text">Add <code>http://localhost:3000/auth/callback</code> to your Pinterest Redirect URIs, then click below to authorize.</p>
+          <div class="input-group">
+            <label>App ID</label>
+            <input type="text" id="inputAppId" value="1545895" class="auth-input">
+          </div>
+          <div class="input-group">
+            <label>App Secret Key</label>
+            <input type="password" id="inputAppSecret" placeholder="Paste Pinterest App Secret Key" class="auth-input">
+          </div>
+          <a href="/auth/pinterest" class="btn-pinterest-primary" style="width:100%;text-align:center;box-sizing:border-box;margin-top:10px;">
+            Authorize with Pinterest
+          </a>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display:flex;gap:10px;flex-direction:column;">
+        <button id="btnSaveToken" class="btn-pinterest-primary" style="width:100%;">Save & Test Connection</button>
+        <button id="btnDisconnect" class="btn-pinterest-secondary" style="width:100%;color:#c62828;">Disconnect Current Account</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="app.js"></script>
+</body>
+</html>
+

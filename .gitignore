@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Environment variables & secrets (CRITICAL: NEVER COMMIT SECRETS)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+google_service_account.json
+
+# Local Upload and Slot History Data
+data/history.json
+data/slot_history.json
+data/*.xlsx
+data/*.csv
+!data/.gitkeep
+
+# Local user image queue
+Images/*
+!Images/.gitkeep
+
+# System & OS logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

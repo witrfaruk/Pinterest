@@ -1,0 +1,239 @@
+import express from 'express';
+import cors from 'cors';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+import { CONFIG, EXCEL_FILE, CSV_FILE, IMAGES_DIR, getPublishSlots, saveEnvConfig } from './config.js';
+import { ImageScanner } from './services/imageScanner.js';
+import { publisherEngine } from './services/publisherEngine.js';
+import { scheduler } from './services/scheduler.js';
+import { uploadHistory } from './services/uploadHistory.js';
+import { ActivityLogService } from './services/activityLogService.js';
+import { SpreadsheetLogger } from './services/spreadsheetLogger.js';
+import { PinterestApiService } from './services/pinterestApiService.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Server-Sent Events (SSE) clients
+const sseClients = new Set();
+
+function broadcastSSE(eventType, data) {
+  const payload = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const res of sseClients) {
+    try {
+      res.write(payload);
+    } catch {
+      sseClients.delete(res);
+    }
+  }
+}
+
+publisherEngine.on('log', logEntry => broadcastSSE('log', logEntry));
+publisherEngine.on('published', record => {
+  broadcastSSE('published', record);
+  broadcastSSE('activity_update', ActivityLogService.getSevenDayActivity());
+});
+
+/**
+ * SSE endpoint for live updates
+ */
+app.get('/api/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  sseClients.add(res);
+  res.write(`event: init\ndata: ${JSON.stringify({ ready: true })}\n\n`);
+
+  req.on('close', () => {
+    sseClients.delete(res);
+  });
+});
+
+/**
+ * Pinterest OAuth: Start Authorization Flow
+ */
+app.get('/auth/pinterest', (req, res) => {
+  const redirectUri = `${req.protocol}://${req.get('host')}/auth/callback`;
+  const scopes = 'boards:read,boards:write,pins:read,pins:write,user_accounts:read';
+  const appId = CONFIG.pinterestAppId || '1545895';
+  const authUrl = `https://www.pinterest.com/oauth/?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}`;
+  res.redirect(authUrl);
+});
+
+/**
+ * Pinterest OAuth: Callback Handler
+ */
+app.get('/auth/callback', async (req, res) => {
+  const { code, error, error_description } = req.query;
+  if (error) {
+    return res.redirect(`/?auth_error=${encodeURIComponent(error_description || error)}`);
+  }
+  if (!code) {
+    return res.redirect('/?auth_error=No+authorization+code+received');
+  }
+
+  try {
+    const redirectUri = `${req.protocol}://${req.get('host')}/auth/callback`;
+    const data = await PinterestApiService.exchangeOAuthCode(code, redirectUri);
+    
+    if (data.access_token) {
+      saveEnvConfig({
+        PINTEREST_ACCESS_TOKEN: data.access_token,
+        PINTEREST_REFRESH_TOKEN: data.refresh_token || ''
+      });
+      return res.redirect('/?auth_success=1');
+    } else {
+      return res.redirect(`/?auth_error=${encodeURIComponent(data.message || 'Token exchange failed')}`);
+    }
+  } catch (err) {
+    console.error('OAuth Callback Error:', err.message);
+    return res.redirect(`/?auth_error=${encodeURIComponent(err.message)}`);
+  }
+});
+
+/**
+ * Pinterest Status & Auth Check
+ */
+app.get('/api/pinterest/status', async (req, res) => {
+  try {
+    const authStatus = await PinterestApiService.checkAuth();
+    res.json({
+      hasToken: Boolean(CONFIG.pinterestAccessToken),
+      appId: CONFIG.pinterestAppId,
+      ...authStatus
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Save Pinterest Token or App Credentials via API
+ */
+app.post('/api/settings/token', async (req, res) => {
+  try {
+    const { token, appId, appSecret } = req.body;
+    const updates = {};
+    if (token !== undefined) updates.PINTEREST_ACCESS_TOKEN = token.trim();
+    if (appId !== undefined) updates.PINTEREST_APP_ID = appId.trim();
+    if (appSecret !== undefined) updates.PINTEREST_APP_SECRET = appSecret.trim();
+
+    saveEnvConfig(updates);
+    const authStatus = await PinterestApiService.checkAuth();
+    res.json({ success: true, ...authStatus });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Disconnect Pinterest Account
+ */
+app.post('/api/pinterest/disconnect', async (req, res) => {
+  try {
+    saveEnvConfig({
+      PINTEREST_ACCESS_TOKEN: '',
+      PINTEREST_REFRESH_TOKEN: ''
+    });
+    res.json({ success: true, message: 'Pinterest account disconnected.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+/**
+ * Main Activity Log Endpoint (Rolling 7 Calendar Days)
+ */
+app.get('/api/activity', async (req, res) => {
+  try {
+    const scan = await ImageScanner.scanPendingImages();
+    const activity = ActivityLogService.getSevenDayActivity();
+    const nextSlot = scheduler.getNextSlotInfo();
+
+    res.json({
+      success: true,
+      imagesDir: IMAGES_DIR,
+      waitingImagesCount: scan.waitingCount,
+      publishSlots: getPublishSlots(),
+      nextSlot,
+      isBusy: publisherEngine.isBusy,
+      activity
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Manual trigger for testing / next publishing slot
+ */
+app.post('/api/publish/trigger', async (req, res) => {
+  try {
+    if (publisherEngine.isBusy) {
+      return res.status(409).json({ error: 'Publishing engine is currently busy.' });
+    }
+
+    publisherEngine.processPublishSlot().then(result => {
+      broadcastSSE('activity_update', ActivityLogService.getSevenDayActivity());
+    }).catch(err => {
+      console.error('Trigger execution error:', err.message);
+    });
+
+    res.json({ success: true, message: 'Publishing slot process started' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Download spreadsheet (.xlsx or .csv)
+ */
+app.get('/api/spreadsheet/download', async (req, res) => {
+  try {
+    const format = (req.query.format || 'xlsx').toLowerCase();
+    await SpreadsheetLogger.updateExcel(uploadHistory.getAll());
+
+    if (format === 'csv') {
+      SpreadsheetLogger.initCSV();
+      if (!fs.existsSync(CSV_FILE)) {
+        return res.status(404).send('CSV log not found');
+      }
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="pinterest_uploads.csv"');
+      return fs.createReadStream(CSV_FILE).pipe(res);
+    } else {
+      if (!fs.existsSync(EXCEL_FILE)) {
+        return res.status(404).send('Excel log not found');
+      }
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename="pinterest_uploads.xlsx"');
+      return fs.createReadStream(EXCEL_FILE).pipe(res);
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Startup check & spreadsheet initialization
+SpreadsheetLogger.updateExcel(uploadHistory.getAll()).catch(() => {});
+
+
+app.listen(CONFIG.port, CONFIG.host, () => {
+  console.log(`\n================================================================`);
+  console.log(`  Pinterest Publisher Machine (12-Step Pipeline with AI Verifier)`);
+  console.log(`  Source Images:  ${IMAGES_DIR}`);
+  console.log(`  Ollama Model:   ${CONFIG.ollamaModel}`);
+  console.log(`  Publish Slots:  ${getPublishSlots().join(', ')}`);
+  console.log(`  Server:         http://${CONFIG.host}:${CONFIG.port}`);
+  console.log(`================================================================\n`);
+});

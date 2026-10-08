@@ -104,9 +104,10 @@ export function getBoardsConfig() {
  * Get 5 publishing time slots (24h format HH:mm)
  */
 export function getPublishSlots() {
-  const envSlots = process.env.PUBLISH_SLOTS || '09:00,12:00,15:00,18:00,21:00';
+  const envSlots = process.env.PUBLISH_SLOTS || '17:30,19:30,21:30,23:30,01:30';
   return envSlots.split(',').map(s => s.trim()).filter(Boolean).slice(0, 5);
 }
+
 
 /**
  * Save updated key-values into .env file and in-memory CONFIG

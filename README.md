@@ -32,7 +32,7 @@
 - 🧠 **Local Multimodal AI (`qwen2.5vl:3b`)**: Zero cloud AI fees. Analyzes raw images directly on your machine.
 - 🎯 **Intelligent 5-Board Categorizer**: Classifies incoming pins into the exact best board based on content intent.
 - 🛡️ **Self-Correcting AI Verifier (Step 9)**: Audits every title ($\le 100$), description ($\le 500$), and alt text ($\le 500$) with automatic rewrite loops before publishing.
-- ⏰ **5 Fixed Daily Slots**: Automatically publishes at `09:00`, `12:00`, `15:00`, `18:00`, and `21:00`.
+- ⏰ **5 Fixed Daily Slots**: Automatically publishes at `17:30`, `19:30`, `21:30`, `23:30`, and `01:30` IST *(8:00 AM, 10:00 AM, 12:00 PM, 2:00 PM, 4:00 PM ET)*.
 - 📊 **Real-Time Google Sheets Webhook**: Live 10-column spreadsheet sync for every single attempt & success.
 - 🔒 **Safe FIFO Clean-up**: Local images are deleted **only** after Pinterest returns `HTTP 201 Created`. Never lost on error.
 - 🎨 **Official Pinterest-Aesthetic Dashboard**: Real-time 7-calendar-day visual activity log with SSE live streams.
@@ -43,7 +43,7 @@
 
 ```mermaid
 flowchart TD
-    A[📂 Drop Images in /Images FIFO] --> B[⏰ Daily Scheduler Slot Trigger 09:00, 12:00, 15:00, 18:00, 21:00]
+    A[📂 Drop Images in /Images FIFO] --> B[⏰ Daily Scheduler Slot Trigger 17:30, 19:30, 21:30, 23:30, 01:30 IST]
     B --> C[📸 Step 3: Ollama Vision qwen2.5vl:3b Analysis]
     C --> D[✍️ Steps 4-7: Generate Title, Description, Tags, Alt Text]
     D --> E[🎯 Step 8: Classify Single Best Board from 5 Finmunt Boards]
@@ -54,6 +54,7 @@ flowchart TD
     H --> I[🗑️ Safe Delete Local Image from /Images]
     G -->|Failure| J[🔁 Step 12: Retry Engine Up to 10 Attempts - Image Preserved]
 ```
+
 
 ---
 

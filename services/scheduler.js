@@ -36,36 +36,63 @@ class Scheduler {
   }
 
   /**
-   * Get upcoming slot description (strictly within today or tomorrow, no future date leaks)
+   * Get upcoming slot description (strictly today or tomorrow, with exact countdown)
    */
   getNextSlotInfo() {
     const slots = getPublishSlots();
+    if (!slots.length) {
+      return { slotIndex: 0, time: '--:--', displayText: 'No slots scheduled' };
+    }
+
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-    for (let i = 0; i < slots.length; i++) {
-      const [h, m] = slots[i].split(':').map(Number);
+    // Find all remaining slots today
+    const upcomingToday = [];
+    slots.forEach((time, index) => {
+      const [h, m] = time.split(':').map(Number);
       const slotMinutes = h * 60 + m;
       if (slotMinutes > currentMinutes) {
-        const diff = slotMinutes - currentMinutes;
-        const diffH = Math.floor(diff / 60);
-        const diffM = diff % 60;
-        const countdown = diffH > 0 ? `${diffH}h ${diffM}m` : `${diffM}m`;
-        return {
-          slotIndex: i,
-          time: slots[i],
-          displayText: `Today at ${slots[i]} (in ${countdown})`
-        };
+        upcomingToday.push({
+          slotIndex: index,
+          time,
+          minutesUntil: slotMinutes - currentMinutes
+        });
       }
+    });
+
+    if (upcomingToday.length > 0) {
+      upcomingToday.sort((a, b) => a.minutesUntil - b.minutesUntil);
+      const next = upcomingToday[0];
+      const diffH = Math.floor(next.minutesUntil / 60);
+      const diffM = next.minutesUntil % 60;
+      const countdown = diffH > 0 ? `${diffH}h ${diffM}m` : `${diffM}m`;
+      return {
+        slotIndex: next.slotIndex,
+        time: next.time,
+        displayText: `Today at ${next.time} (in ${countdown})`
+      };
     }
 
-    const firstSlot = slots[0] || '09:00';
+    // Wrap around to earliest slot tomorrow
+    const tomorrowSlots = slots.map((time, index) => {
+      const [h, m] = time.split(':').map(Number);
+      return { slotIndex: index, time, slotMinutes: h * 60 + m };
+    }).sort((a, b) => a.slotMinutes - b.slotMinutes);
+
+    const firstTomorrow = tomorrowSlots[0];
+    const diff = (24 * 60 - currentMinutes) + firstTomorrow.slotMinutes;
+    const diffH = Math.floor(diff / 60);
+    const diffM = diff % 60;
+    const countdown = diffH > 0 ? `${diffH}h ${diffM}m` : `${diffM}m`;
+
     return {
-      slotIndex: 0,
-      time: firstSlot,
-      displayText: `Tomorrow at ${firstSlot}`
+      slotIndex: firstTomorrow.slotIndex,
+      time: firstTomorrow.time,
+      displayText: `Tomorrow at ${firstTomorrow.time} (in ${countdown})`
     };
   }
 }
 
 export const scheduler = new Scheduler();
+

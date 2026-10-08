@@ -8,16 +8,16 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Fixed Core Image Source Folder
-export const IMAGES_DIR = path.resolve(__dirname, 'Images');
+// Fixed Core Image Source Folder (Uses /tmp on Vercel Serverless)
+export const IMAGES_DIR = process.env.VERCEL ? '/tmp/Images' : path.resolve(__dirname, 'Images');
 if (!fs.existsSync(IMAGES_DIR)) {
-  fs.mkdirSync(IMAGES_DIR, { recursive: true });
+  try { fs.mkdirSync(IMAGES_DIR, { recursive: true }); } catch (e) {}
 }
 
-// Persistent Data Directory
-export const DATA_DIR = path.join(__dirname, 'data');
+// Persistent Data Directory (Uses /tmp on Vercel Serverless)
+export const DATA_DIR = process.env.VERCEL ? '/tmp/data' : path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) {}
 }
 
 export const BOARDS_CONFIG_FILE = path.join(__dirname, 'boards.json');

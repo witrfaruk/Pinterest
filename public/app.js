@@ -163,12 +163,14 @@ function lockDashboard() {
   const mainApp = document.getElementById('mainAppContainer');
   if (mainApp) {
     mainApp.classList.add('dashboard-locked');
+    mainApp.style.display = 'none';
   }
 
   const overlay = document.getElementById('lockScreenOverlay');
   if (overlay) {
     overlay.classList.remove('hidden');
     overlay.classList.remove('__web-inspector-hide-shortcut__');
+    overlay.style.display = 'flex';
   }
 
   const input = document.getElementById('inputLockPassword');
@@ -196,11 +198,13 @@ function unlockDashboard(token) {
   const overlay = document.getElementById('lockScreenOverlay');
   if (overlay) {
     overlay.classList.add('hidden');
+    overlay.style.display = 'none';
   }
 
   const mainApp = document.getElementById('mainAppContainer');
   if (mainApp) {
     mainApp.classList.remove('dashboard-locked');
+    mainApp.style.display = 'block';
   }
 
   startLockCountdown();

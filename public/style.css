@@ -1275,3 +1275,161 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   Security Lock Screen & Anti-Bypass Styles
+   ========================================================================== */
+.lock-screen-overlay,
+.lock-screen-overlay.__web-inspector-hide-shortcut__ {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 2147483647 !important;
+  padding: 20px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.lock-screen-overlay.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.lock-card {
+  background: #ffffff;
+  border-radius: 28px;
+  width: 100%;
+  max-width: 440px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 2147483648;
+  animation: lockCardPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes lockCardPop {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.lock-icon-badge {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--pinterest-red);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px auto;
+  box-shadow: 0 10px 25px var(--pinterest-red-glow);
+}
+
+.lock-card h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+
+.lock-subtitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+}
+
+.lock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lock-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lock-input-group input {
+  width: 100%;
+  padding: 14px 46px 14px 18px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border-card);
+  font-family: var(--font-main);
+  font-size: 14px;
+  background: #f8fafc;
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
+
+.lock-input-group input:focus {
+  outline: none;
+  border-color: var(--pinterest-red);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px var(--pinterest-red-light);
+}
+
+.btn-toggle-eye {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.btn-toggle-eye:hover {
+  color: var(--text-main);
+}
+
+.lock-error {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--status-failed-bg);
+  border: 1px solid var(--status-failed-border);
+  color: var(--status-failed-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  animation: shakeError 0.3s ease;
+}
+
+@keyframes shakeError {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.lock-timer-pill {
+  background: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  color: #be123c !important;
+}
+
+.dashboard-locked {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+

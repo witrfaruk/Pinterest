@@ -15,8 +15,7 @@ import { PinterestApiService } from './services/pinterestApiService.js';
 import { autoQueueProcessor } from './services/autoQueueProcessor.js';
 import { SupabaseSyncService } from './services/supabaseSyncService.js';
 
-import { EmailAlertService } from './services/emailAlertService.js';
-
+import crypto from 'node:crypto';
 import multer from 'multer';
 import { BoardClassifier } from './services/boardClassifier.js';
 import { MetadataGenerator } from './services/metadataGenerator.js';
@@ -34,6 +33,35 @@ const upload = multer({
   dest: uploadsDir,
   limits: { fileSize: 30 * 1024 * 1024 } // 30MB max
 });
+
+// Authentication Helpers
+export function generateAuthToken() {
+  const secret = process.env.DASHBOARD_PASSWORD || '21JG615Y3U7LQd0T6w5p575lR';
+  const timestamp = Date.now();
+  const signature = crypto.createHmac('sha256', secret).update(`${timestamp}:${secret}`).digest('hex');
+  return `${timestamp}.${signature}`;
+}
+
+export function verifyAuthToken(token) {
+  if (!token || typeof token !== 'string') return false;
+  const parts = token.split('.');
+  if (parts.length !== 2) return false;
+  const [timestampStr, signature] = parts;
+  const timestamp = parseInt(timestampStr, 10);
+  if (isNaN(timestamp)) return false;
+
+  const secret = process.env.DASHBOARD_PASSWORD || '21JG615Y3U7LQd0T6w5p575lR';
+  const expectedSignature = crypto.createHmac('sha256', secret).update(`${timestamp}:${secret}`).digest('hex');
+  return signature === expectedSignature;
+}
+
+export function requireAuth(req, res, next) {
+  const token = req.headers['x-auth-token'];
+  if (verifyAuthToken(token)) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized: Valid dashboard authentication token required' });
+}
 
 const app = express();
 app.use(cors());
@@ -129,7 +157,7 @@ app.get('/auth/callback', async (req, res) => {
 /**
  * Pinterest Status & Auth Check
  */
-app.get('/api/pinterest/status', async (req, res) => {
+app.get('/api/pinterest/status', requireAuth, async (req, res) => {
   try {
     const authStatus = await PinterestApiService.checkAuth();
     res.json({
@@ -145,7 +173,7 @@ app.get('/api/pinterest/status', async (req, res) => {
 /**
  * Save Pinterest Token or App Credentials via API
  */
-app.post('/api/settings/token', async (req, res) => {
+app.post('/api/settings/token', requireAuth, async (req, res) => {
   try {
     const { token, appId, appSecret } = req.body;
     const updates = {};
@@ -164,7 +192,7 @@ app.post('/api/settings/token', async (req, res) => {
 /**
  * Disconnect Pinterest Account
  */
-app.post('/api/pinterest/disconnect', async (req, res) => {
+app.post('/api/pinterest/disconnect', requireAuth, async (req, res) => {
   try {
     saveEnvConfig({
       PINTEREST_ACCESS_TOKEN: '',
@@ -180,7 +208,7 @@ app.post('/api/pinterest/disconnect', async (req, res) => {
 /**
  * Main Activity Log Endpoint (Rolling 7 Calendar Days)
  */
-app.get('/api/activity', async (req, res) => {
+app.get('/api/activity', requireAuth, async (req, res) => {
   try {
     const scan = await ImageScanner.scanPendingImages();
     const activity = ActivityLogService.getSevenDayActivity();
@@ -203,7 +231,7 @@ app.get('/api/activity', async (req, res) => {
 /**
  * Manual trigger for testing / next publishing slot
  */
-app.post('/api/publish/trigger', async (req, res) => {
+app.post('/api/publish/trigger', requireAuth, async (req, res) => {
   try {
     if (publisherEngine.isBusy) {
       return res.status(409).json({ error: 'Publishing engine is currently busy.' });
@@ -253,7 +281,7 @@ app.get('/api/spreadsheet/download', async (req, res) => {
 /**
  * Supabase Queue Status Endpoint
  */
-app.get('/api/supabase/queue', async (req, res) => {
+app.get('/api/supabase/queue', requireAuth, async (req, res) => {
   try {
     const queueStatus = await SupabaseSyncService.getQueueStatus();
     res.json({
@@ -268,7 +296,7 @@ app.get('/api/supabase/queue', async (req, res) => {
 /**
  * Send a Test Low-Queue Email Alert
  */
-app.post('/api/email/test', async (req, res) => {
+app.post('/api/email/test', requireAuth, async (req, res) => {
   try {
     const result = await EmailAlertService.checkAndSendLowQueueAlert(5, 10);
     res.json(result);
@@ -285,7 +313,8 @@ app.post('/api/auth/verify', (req, res) => {
     const { password } = req.body;
     const correctPassword = process.env.DASHBOARD_PASSWORD || '21JG615Y3U7LQd0T6w5p575lR';
     if (password === correctPassword) {
-      return res.json({ success: true, message: 'Authentication successful' });
+      const token = generateAuthToken();
+      return res.json({ success: true, token, message: 'Authentication successful' });
     }
     return res.status(401).json({ success: false, error: 'Incorrect password' });
   } catch (err) {
@@ -296,7 +325,7 @@ app.post('/api/auth/verify', (req, res) => {
 /**
  * AI Pre-Analyze Uploaded Image (from phone/browser)
  */
-app.post('/api/analyze/image', upload.single('image'), async (req, res) => {
+app.post('/api/analyze/image', requireAuth, upload.single('image'), async (req, res) => {
   const file = req.file;
   if (!file) {
     return res.status(400).json({ error: 'No image file uploaded' });
@@ -337,7 +366,7 @@ app.post('/api/analyze/image', upload.single('image'), async (req, res) => {
 /**
  * Upload Pin to Cloud Queue (from phone or browser)
  */
-app.post('/api/upload/pin', upload.single('image'), async (req, res) => {
+app.post('/api/upload/pin', requireAuth, upload.single('image'), async (req, res) => {
   const file = req.file;
   if (!file) {
     return res.status(400).json({ error: 'No image file uploaded' });

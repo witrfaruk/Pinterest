@@ -18,8 +18,8 @@
   <div class="ambient-glow glow-1"></div>
   <div class="ambient-glow glow-2"></div>
 
-  <!-- Security Auto-Lock Screen Overlay -->
-  <div class="lock-screen-overlay" id="lockScreenOverlay" style="display:none;">
+  <!-- Security Auto-Lock Screen Overlay (Default Visible) -->
+  <div class="lock-screen-overlay" id="lockScreenOverlay" style="display:flex;">
     <div class="lock-card">
       <div class="lock-icon-badge">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
@@ -44,7 +44,8 @@
     </div>
   </div>
 
-  <div class="pinterest-app">
+  <!-- Main App Container (Hidden until verified) -->
+  <div class="pinterest-app dashboard-locked" id="mainAppContainer" style="display:none;">
     
     <!-- Pinterest Header -->
     <header class="pinterest-header">

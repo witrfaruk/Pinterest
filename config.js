@@ -37,11 +37,12 @@ export const LIMITS = {
 
 // Google Spreadsheet Configuration
 export const GOOGLE_SPREADSHEET_CONFIG = {
-  spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID || '1mjlVzJsARnpRHLQV3FMdLQUtEQSUl02J2V1spmnDKLc',
+  spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID || '',
   sheetName: process.env.GOOGLE_SHEET_NAME || 'Finmunt',
   serviceAccountKeyFile: process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE || path.join(__dirname, 'google_service_account.json'),
   webhookUrl: process.env.GOOGLE_SHEET_WEBHOOK_URL || ''
 };
+
 
 /**
  * Load the 5 configured Pinterest boards
@@ -146,11 +147,12 @@ export function saveEnvConfig(updates = {}) {
 export const CONFIG = {
   port: parseInt(process.env.PORT || '3000', 10),
   host: process.env.HOST || '127.0.0.1',
-  pinterestAppId: process.env.PINTEREST_APP_ID || '1545895',
+  pinterestAppId: process.env.PINTEREST_APP_ID || '',
   pinterestAppSecret: process.env.PINTEREST_APP_SECRET || '',
   pinterestAccessToken: process.env.PINTEREST_ACCESS_TOKEN || '',
   pinterestRefreshToken: process.env.PINTEREST_REFRESH_TOKEN || '',
   pinterestUseSandbox: process.env.PINTEREST_USE_SANDBOX === 'true',
+
   ollamaHost: process.env.OLLAMA_HOST || 'http://127.0.0.1:11434',
   ollamaModel: process.env.OLLAMA_MODEL || 'qwen2.5vl:3b',
   deleteAfterUpload: process.env.DELETE_AFTER_UPLOAD !== 'false'

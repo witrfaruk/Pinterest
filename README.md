@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/Pinterest-Dark.svg" width="90" height="90" alt="Pinterest Logo" />
+  <img src="https://api.iconify.design/logos:pinterest.svg" width="80" height="80" alt="Pinterest Logo" />
 
   # 📌 Finmunt • Autonomous Pinterest Publishing Engine
   
@@ -107,8 +107,8 @@ cp .env.example .env
 Fill in your configuration:
 ```env
 PORT=3000
-PINTEREST_APP_ID=1545895
-PINTEREST_APP_SECRET=your_app_secret
+PINTEREST_APP_ID=your_pinterest_app_id
+PINTEREST_APP_SECRET=your_pinterest_app_secret
 OLLAMA_MODEL=qwen2.5vl:3b
 PUBLISH_SLOTS=09:00,12:00,15:00,18:00,21:00
 ```
@@ -126,15 +126,6 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser!
 
 ---
 
-## 🛠️ Automated Testing
-
-Run the isolated validation test suite:
-```bash
-npm test
-```
-
----
-
 ## 🎨 Dashboard Preview
 
 - **Pinterest Red (`#E60023`) Aesthetic**: Clean rounded cards, pill badges, and smooth animations.
@@ -146,3 +137,4 @@ npm test
 <div align="center">
   <sub>Built for <strong>Finmunt</strong> • Engineered for 100% Autonomous Content Delivery</sub>
 </div>
+

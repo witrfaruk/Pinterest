@@ -2,6 +2,24 @@ import { uploadHistory } from './uploadHistory.js';
 import { getPublishSlots } from '../config.js';
 import { SupabaseSyncService } from './supabaseSyncService.js';
 
+function isSlotPassedToday(slotTimeStr) {
+  const now = new Date();
+  // Calculate current IST (UTC + 5:30)
+  const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const istNow = new Date(utcNow + (3600000 * 5.5));
+
+  const [slotH, slotM] = slotTimeStr.split(':').map(Number);
+  const slotMinutes = (slotH * 60) + slotM;
+  const currentMinutes = (istNow.getHours() * 60) + istNow.getMinutes();
+
+  // Overnight slot (01:30)
+  if (slotH < 5) {
+    return false;
+  }
+
+  return currentMinutes >= slotMinutes;
+}
+
 export class ActivityLogService {
   /**
    * Get exactly the rolling last 7 calendar days (Today down to 6 days ago)
@@ -24,7 +42,7 @@ export class ActivityLogService {
 
     const localHistory = uploadHistory.getAll() || [];
 
-    // 2. Build unified list of completed published pins
+    // 2. Build unified list of real completed published pins
     const combinedPublished = [];
     const seenPinIds = new Set();
 
@@ -68,6 +86,8 @@ export class ActivityLogService {
       const dayUploads = combinedPublished.filter(item => item.date === dateStr);
       const recordedDaySlots = uploadHistory.getDaySlots(dateStr);
 
+      let usedUploadIndex = 0;
+
       const slots = slotsConfig.map((time, idx) => {
         // If local recorded slot execution exists and has COMPLETED
         const rec = recordedDaySlots[idx];
@@ -75,23 +95,25 @@ export class ActivityLogService {
           return rec;
         }
 
-        // If a published pin exists on this date for this slot index
-        if (dayUploads[idx]) {
-          const u = dayUploads[idx];
-          return {
-            slotIndex: idx,
-            slotTime: time,
-            status: 'COMPLETED',
-            filename: u.title || u.filename,
-            boardName: u.boardName,
-            pinId: u.pinId,
-            pinUrl: u.pinUrl,
-            error: null
-          };
-        }
-
-        // If today and slot time is pending
+        // For today: only mark as completed if the slot time has actually passed
         if (i === 0) {
+          const hasPassed = isSlotPassedToday(time);
+          if (hasPassed && dayUploads[usedUploadIndex]) {
+            const u = dayUploads[usedUploadIndex];
+            usedUploadIndex++;
+            return {
+              slotIndex: idx,
+              slotTime: time,
+              status: 'COMPLETED',
+              filename: u.title || u.filename,
+              boardName: u.boardName,
+              pinId: u.pinId,
+              pinUrl: u.pinUrl,
+              error: null
+            };
+          }
+
+          // Slot time is in the future
           return {
             slotIndex: idx,
             slotTime: time,
@@ -104,6 +126,21 @@ export class ActivityLogService {
         }
 
         // For past days
+        if (dayUploads[usedUploadIndex]) {
+          const u = dayUploads[usedUploadIndex];
+          usedUploadIndex++;
+          return {
+            slotIndex: idx,
+            slotTime: time,
+            status: 'COMPLETED',
+            filename: u.title || u.filename,
+            boardName: u.boardName,
+            pinId: u.pinId,
+            pinUrl: u.pinUrl,
+            error: null
+          };
+        }
+
         return {
           slotIndex: idx,
           slotTime: time,

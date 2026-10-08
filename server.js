@@ -83,15 +83,21 @@ function broadcastSSE(eventType, data) {
 }
 
 publisherEngine.on('log', logEntry => broadcastSSE('log', logEntry));
-publisherEngine.on('published', record => {
+publisherEngine.on('published', async record => {
   broadcastSSE('published', record);
-  broadcastSSE('activity_update', ActivityLogService.getSevenDayActivity());
+  try {
+    const act = await ActivityLogService.getSevenDayActivity();
+    broadcastSSE('activity_update', act);
+  } catch (e) {}
 });
 
 autoQueueProcessor.on('log', logEntry => broadcastSSE('log', logEntry));
-autoQueueProcessor.on('queued', queuedItem => {
+autoQueueProcessor.on('queued', async queuedItem => {
   broadcastSSE('queued', queuedItem);
-  broadcastSSE('activity_update', ActivityLogService.getSevenDayActivity());
+  try {
+    const act = await ActivityLogService.getSevenDayActivity();
+    broadcastSSE('activity_update', act);
+  } catch (e) {}
 });
 
 
@@ -211,7 +217,7 @@ app.post('/api/pinterest/disconnect', requireAuth, async (req, res) => {
 app.get('/api/activity', requireAuth, async (req, res) => {
   try {
     const scan = await ImageScanner.scanPendingImages();
-    const activity = ActivityLogService.getSevenDayActivity();
+    const activity = await ActivityLogService.getSevenDayActivity();
     const nextSlot = scheduler.getNextSlotInfo();
 
     res.json({
@@ -237,8 +243,11 @@ app.post('/api/publish/trigger', requireAuth, async (req, res) => {
       return res.status(409).json({ error: 'Publishing engine is currently busy.' });
     }
 
-    publisherEngine.processPublishSlot().then(result => {
-      broadcastSSE('activity_update', ActivityLogService.getSevenDayActivity());
+    publisherEngine.processPublishSlot().then(async result => {
+      try {
+        const act = await ActivityLogService.getSevenDayActivity();
+        broadcastSSE('activity_update', act);
+      } catch (e) {}
     }).catch(err => {
       console.error('Trigger execution error:', err.message);
     });
@@ -416,7 +425,10 @@ app.post('/api/upload/pin', requireAuth, upload.single('image'), async (req, res
     });
 
     broadcastSSE('queued', queuedPin);
-    broadcastSSE('activity_update', ActivityLogService.getSevenDayActivity());
+    try {
+      const act = await ActivityLogService.getSevenDayActivity();
+      broadcastSSE('activity_update', act);
+    } catch (e) {}
 
     res.json({
       success: true,

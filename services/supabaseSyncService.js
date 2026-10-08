@@ -99,7 +99,7 @@ export class SupabaseSyncService {
   }
 
   /**
-   * Fetch current queue status from Supabase
+   * Fetch current queue status from Supabase (PENDING only)
    */
   static async getQueueStatus() {
     try {
@@ -107,12 +107,60 @@ export class SupabaseSyncService {
       const { data, error } = await supabase
         .from('pin_queue')
         .select('*')
+        .eq('status', 'PENDING')
         .order('created_at', { ascending: true });
 
       if (error) return { count: 0, items: [], error: error.message };
       return { count: data.length, items: data };
     } catch (err) {
       return { count: 0, items: [], error: err.message };
+    }
+  }
+
+  /**
+   * Fetch published history from Supabase (COMPLETED pins)
+   */
+  static async getPublishedHistory() {
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from('pin_queue')
+        .select('*')
+        .eq('status', 'COMPLETED')
+        .order('updated_at', { ascending: false });
+
+      if (error) return [];
+      return data || [];
+    } catch (err) {
+      return [];
+    }
+  }
+
+  /**
+   * Mark pin as completed in Supabase and clean up storage
+   */
+  static async markPinCompleted(id, storagePath, pinId, pinUrl) {
+    const supabase = getSupabaseClient();
+    const bucket = this.getBucketName();
+
+    if (storagePath && !storagePath.startsWith('published_')) {
+      try {
+        await supabase.storage.from(bucket).remove([storagePath]);
+      } catch (e) {}
+    }
+
+    if (id) {
+      try {
+        await supabase
+          .from('pin_queue')
+          .update({
+            status: 'COMPLETED',
+            error: pinId,
+            image_url: pinUrl || '',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id);
+      } catch (e) {}
     }
   }
 

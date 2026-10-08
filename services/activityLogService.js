@@ -1,17 +1,54 @@
 import { uploadHistory } from './uploadHistory.js';
 import { getPublishSlots } from '../config.js';
+import { SupabaseSyncService } from './supabaseSyncService.js';
 
 export class ActivityLogService {
   /**
    * Get exactly the rolling last 7 calendar days (Today down to 6 days ago)
-   * Automatically drops any older day. Never displays future dates.
+   * Merges Supabase Cloud published history with local upload history.
    */
-  static getSevenDayActivity() {
+  static async getSevenDayActivity() {
     uploadHistory.pruneOldSlotHistory();
 
     const slotsConfig = getPublishSlots();
     const totalSlotsPerDay = slotsConfig.length;
     const days = [];
+
+    // 1. Fetch Cloud Completed Pins from Supabase
+    let cloudHistory = [];
+    try {
+      cloudHistory = await SupabaseSyncService.getPublishedHistory();
+    } catch (e) {
+      console.warn('Could not fetch cloud published history:', e.message);
+    }
+
+    const localHistory = uploadHistory.getAll() || [];
+
+    // 2. Build unified list of completed published pins
+    const combinedPublished = [];
+    const seenPinIds = new Set();
+
+    for (const item of [...localHistory, ...cloudHistory]) {
+      const pinId = item.pinId || item.pin_id || item.error;
+      const title = item.title;
+      const key = pinId || title;
+      if (key && seenPinIds.has(key)) continue;
+      if (key) seenPinIds.add(key);
+
+      const timestampStr = item.timestamp || item.updated_at || item.created_at || new Date().toISOString();
+      const dateStr = item.date || timestampStr.split('T')[0];
+
+      combinedPublished.push({
+        date: dateStr,
+        timestamp: timestampStr,
+        filename: item.filename || item.title || 'Pin',
+        title: item.title || item.filename,
+        boardName: item.boardName || item.board_name || 'Finmunt',
+        pinId: pinId,
+        pinUrl: item.pinUrl || item.image_url || (pinId ? `https://www.pinterest.com/pin/${pinId}/` : null),
+        status: 'COMPLETED'
+      });
+    }
 
     const now = new Date();
 
@@ -27,22 +64,60 @@ export class ActivityLogService {
       const dateLabel = `${monthName} ${dayNum}`;
       const weekday = targetDate.toLocaleDateString('en-US', { weekday: 'short' });
 
-      const dayUploads = uploadHistory.getUploadsForDate(dateStr);
-      const daySlots = uploadHistory.getDaySlots(dateStr);
+      // Published pins on this specific calendar date
+      const dayUploads = combinedPublished.filter(item => item.date === dateStr);
+      const recordedDaySlots = uploadHistory.getDaySlots(dateStr);
 
-      let successCount = 0;
-      let failedCount = 0;
-      let skippedCount = 0;
+      const slots = slotsConfig.map((time, idx) => {
+        // If local recorded slot execution exists and has COMPLETED
+        const rec = recordedDaySlots[idx];
+        if (rec && rec.status === 'COMPLETED') {
+          return rec;
+        }
 
-      daySlots.forEach(slot => {
-        if (slot.status === 'COMPLETED') successCount++;
-        else if (slot.status === 'FAILED') failedCount++;
-        else if (slot.status === 'SKIPPED') skippedCount++;
+        // If a published pin exists on this date for this slot index
+        if (dayUploads[idx]) {
+          const u = dayUploads[idx];
+          return {
+            slotIndex: idx,
+            slotTime: time,
+            status: 'COMPLETED',
+            filename: u.title || u.filename,
+            boardName: u.boardName,
+            pinId: u.pinId,
+            pinUrl: u.pinUrl,
+            error: null
+          };
+        }
+
+        // If today and slot time is pending
+        if (i === 0) {
+          return {
+            slotIndex: idx,
+            slotTime: time,
+            status: 'PENDING',
+            filename: null,
+            boardName: null,
+            pinId: null,
+            error: null
+          };
+        }
+
+        // For past days
+        return {
+          slotIndex: idx,
+          slotTime: time,
+          status: 'SKIPPED',
+          filename: null,
+          boardName: null,
+          pinId: null,
+          error: null
+        };
       });
 
-      if (dayUploads.length > successCount) {
-        successCount = dayUploads.length;
-      }
+      let successCount = slots.filter(s => s.status === 'COMPLETED').length;
+      let failedCount = slots.filter(s => s.status === 'FAILED').length;
+      let skippedCount = slots.filter(s => s.status === 'SKIPPED').length;
 
       days.push({
         date: dateStr,
@@ -54,7 +129,7 @@ export class ActivityLogService {
         summaryText: `${successCount} / ${totalSlotsPerDay} successful`,
         failedCount,
         skippedCount,
-        slots: daySlots,
+        slots,
         uploads: dayUploads
       });
     }

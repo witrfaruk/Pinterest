@@ -61,8 +61,8 @@ class PublisherEngine extends EventEmitter {
 
         this.log(`[Pinterest] ✓ Created pin: ${pinResult.pinUrl}`, 'success');
 
-        // Delete from Supabase Storage & DB table
-        await SupabaseSyncService.removeCompletedPin(queuedPin.id, queuedPin.storage_path);
+        // Mark completed in Supabase & remove image from storage
+        await SupabaseSyncService.markPinCompleted(queuedPin.id, queuedPin.storage_path, pinResult.pinId, pinResult.pinUrl);
 
         // Record in Local History
         const finalRecord = uploadHistory.recordUpload({

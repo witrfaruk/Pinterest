@@ -42,7 +42,7 @@ export class PinterestApiService {
   /**
    * STEP 10: Official Pinterest API v5 upload
    */
-  static async createPin({ boardId, title, description, altText, imagePath, link = '' }) {
+  static async createPin({ boardId, title, description, altText, imagePath, imageUrl, link = '' }) {
     const token = CONFIG.pinterestAccessToken;
     if (!token) {
       throw new Error('PINTEREST_ACCESS_TOKEN is missing in .env configuration.');
@@ -52,18 +52,30 @@ export class PinterestApiService {
     }
 
     const baseUrl = this.getBaseUrl();
-    const { contentType, base64 } = await this.prepareImageBuffer(imagePath);
+    let mediaSource;
+
+    if (imageUrl) {
+      mediaSource = {
+        source_type: 'image_url',
+        url: imageUrl
+      };
+    } else if (imagePath) {
+      const { contentType, base64 } = await this.prepareImageBuffer(imagePath);
+      mediaSource = {
+        source_type: 'image_base64',
+        content_type: contentType,
+        data: base64
+      };
+    } else {
+      throw new Error('Either imagePath or imageUrl must be provided to createPin.');
+    }
 
     const payload = {
       board_id: boardId,
       title: title ? title.slice(0, 100) : '',
       description: description ? description.slice(0, 500) : '',
       alt_text: altText ? altText.slice(0, 500) : '',
-      media_source: {
-        source_type: 'image_base64',
-        content_type: contentType,
-        data: base64
-      }
+      media_source: mediaSource
     };
 
     if (link && link.startsWith('http')) {

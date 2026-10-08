@@ -8,6 +8,8 @@ import { AiVerifier } from './aiVerifier.js';
 import { PinterestApiService } from './pinterestApiService.js';
 import { uploadHistory } from './uploadHistory.js';
 import { SpreadsheetLogger } from './spreadsheetLogger.js';
+import { SupabaseSyncService } from './supabaseSyncService.js';
+import { EmailAlertService } from './emailAlertService.js';
 
 class PublisherEngine extends EventEmitter {
   constructor() {
@@ -41,21 +43,80 @@ class PublisherEngine extends EventEmitter {
       // STEP 1: Start the publishing process
       this.log(`[STEP 1] Starting publishing process (Slot: ${slotTime || 'Manual Trigger'})...`, 'info');
 
-      // STEP 2: Fetch next unprocessed image
+      // Check Supabase Cloud Queue First (where all pre-generated pins are stored)
+      const supabaseStatus = await SupabaseSyncService.getQueueStatus();
+      if (supabaseStatus && supabaseStatus.items && supabaseStatus.items.length > 0) {
+        const queuedPin = supabaseStatus.items[0];
+        const filename = queuedPin.storage_path ? queuedPin.storage_path.split('_').slice(1).join('_') : 'pin.png';
+
+        this.log(`[Cloud Queue] Publishing ready pin from Supabase: "${queuedPin.title}" (${queuedPin.board_name})...`, 'info');
+
+        const pinResult = await PinterestApiService.createPin({
+          boardId: queuedPin.board_id,
+          title: queuedPin.title,
+          description: queuedPin.description,
+          altText: queuedPin.alt_text,
+          imageUrl: queuedPin.image_url
+        });
+
+        this.log(`[Pinterest] ✓ Created pin: ${pinResult.pinUrl}`, 'success');
+
+        // Delete from Supabase Storage & DB table
+        await SupabaseSyncService.removeCompletedPin(queuedPin.id, queuedPin.storage_path);
+
+        // Record in Local History
+        const finalRecord = uploadHistory.recordUpload({
+          filename,
+          postName: filename,
+          tries: 1,
+          boardId: queuedPin.board_id,
+          boardName: queuedPin.board_name,
+          pinId: pinResult.pinId,
+          pinUrl: pinResult.pinUrl,
+          title: queuedPin.title,
+          description: queuedPin.description,
+          tags: queuedPin.tags,
+          altText: queuedPin.alt_text,
+          status: 'SUCCESS'
+        });
+
+        if (slotIndex !== null) {
+          uploadHistory.recordSlotExecution(todayDate, slotIndex, slotTime, {
+            status: 'COMPLETED',
+            filename,
+            boardName: queuedPin.board_name,
+            pinId: pinResult.pinId
+          });
+        }
+
+        // Log to Google Spreadsheet (Finmunt)
+        await SpreadsheetLogger.recordUpload(finalRecord, uploadHistory.getAll());
+
+        // Low queue check (send email if <= 5 pins remaining)
+        const remainingCount = supabaseStatus.count - 1;
+        if (remainingCount <= 5) {
+          await EmailAlertService.checkAndSendLowQueueAlert(remainingCount);
+        }
+
+        this.emit('published', finalRecord);
+        return { success: true, pinResult, finalRecord };
+      }
+
+      // STEP 2: Fetch next unprocessed image from local folder as fallback
       const nextImage = await ImageScanner.getNextPendingImage();
       if (!nextImage) {
-        this.log(`[STEP 2] No images available in Images folder. Slot marked as SKIPPED.`, 'warning');
+        this.log(`[STEP 2] No images available in Supabase queue or local Images folder. Slot marked as SKIPPED.`, 'warning');
         if (slotIndex !== null) {
           uploadHistory.recordSlotExecution(todayDate, slotIndex, slotTime, {
             status: 'SKIPPED',
-            error: 'No images available in Images folder'
+            error: 'No images available in queue'
           });
         }
         return { success: false, status: 'SKIPPED', reason: 'No images available' };
       }
 
       const { fullPath, filename } = nextImage;
-      this.log(`[STEP 2] Fetched image: "${filename}".`, 'info');
+      this.log(`[STEP 2] Fetched local image: "${filename}".`, 'info');
 
       // Deduplication check
       const fileBuffer = await fs.readFile(fullPath);

@@ -29,10 +29,11 @@ class AutoQueueProcessor extends EventEmitter {
 
     try {
       const scan = await ImageScanner.scanPendingImages();
-      if (!scan.hasImages || scan.waitingCount === 0) return;
+      if (!scan.success || !scan.pending || scan.pending.length === 0) return;
 
       this.isProcessing = true;
-      const targetImage = scan.nextImage;
+      const targetImage = scan.pending[0];
+      const imagePath = targetImage.fullPath || targetImage.path;
 
       this.emit('log', {
         type: 'info',
@@ -43,18 +44,23 @@ class AutoQueueProcessor extends EventEmitter {
       console.log(`\n[AutoQueue] Processing "${targetImage.filename}" for Supabase Cloud Queue...`);
 
       // 1. Board Classification
-      const boards = getBoardsConfig();
-      const boardClassification = await BoardClassifier.classifyImage(targetImage.path, boards);
+      const selectedBoard = await BoardClassifier.selectBestBoard(imagePath);
 
       // 2. Multimodal Vision Analysis & Metadata Generation
-      const generatedMetadata = await MetadataGenerator.generateMetadata(targetImage.path, boardClassification.board);
+      const generatedMetadata = await MetadataGenerator.generateMetadata({
+        imagePath,
+        boardName: selectedBoard.boardName,
+        topic: selectedBoard.topic
+      });
 
       // 3. AI Verification Loop (Step 9)
-      const verified = await AiVerifier.verifyAndCorrect({
-        imagePath: targetImage.path,
-        metadata: generatedMetadata,
-        selectedBoard: boardClassification.board
+      const verification = await AiVerifier.verifyAndCorrect({
+        imagePath,
+        initialMetadata: generatedMetadata,
+        selectedBoard
       });
+
+      const finalMeta = verification.metadata;
 
       // 4. Upload to Supabase Storage
       this.emit('log', {
@@ -63,23 +69,23 @@ class AutoQueueProcessor extends EventEmitter {
         message: `[AutoQueue] Uploading "${targetImage.filename}" to Supabase Storage...`
       });
 
-      const { storagePath, publicUrl } = await SupabaseSyncService.uploadImage(targetImage.path, targetImage.filename);
+      const { storagePath, publicUrl } = await SupabaseSyncService.uploadImage(imagePath, targetImage.filename);
 
       // 5. Insert into Supabase pin_queue table
       const queuedPin = await SupabaseSyncService.enqueuePin({
         filename: targetImage.filename,
         storagePath,
         imageUrl: publicUrl,
-        title: verified.title,
-        description: verified.description,
-        altText: verified.altText,
-        tags: verified.tags,
-        boardId: boardClassification.board.id,
-        boardName: boardClassification.board.name
+        title: finalMeta.title,
+        description: finalMeta.description,
+        altText: finalMeta.altText,
+        tags: finalMeta.tags,
+        boardId: selectedBoard.boardId,
+        boardName: selectedBoard.boardName
       });
 
       // 6. Delete local file from Images/
-      await fs.unlink(targetImage.path);
+      await fs.unlink(imagePath);
       console.log(`[AutoQueue] ✓ "${targetImage.filename}" pushed to Supabase and deleted locally.`);
 
       this.emit('log', {

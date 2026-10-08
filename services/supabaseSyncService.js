@@ -124,11 +124,15 @@ export class SupabaseSyncService {
     const bucket = this.getBucketName();
 
     if (storagePath) {
-      await supabase.storage.from(bucket).remove([storagePath]).catch(() => {});
+      try {
+        await supabase.storage.from(bucket).remove([storagePath]);
+      } catch (e) {}
     }
 
     if (id) {
-      await supabase.from('pin_queue').delete().eq('id', id).catch(() => {});
+      try {
+        await supabase.from('pin_queue').delete().eq('id', id);
+      } catch (e) {}
     }
   }
 }

@@ -15,8 +15,25 @@ import { PinterestApiService } from './services/pinterestApiService.js';
 import { autoQueueProcessor } from './services/autoQueueProcessor.js';
 import { SupabaseSyncService } from './services/supabaseSyncService.js';
 
+import { EmailAlertService } from './services/emailAlertService.js';
+
+import multer from 'multer';
+import { BoardClassifier } from './services/boardClassifier.js';
+import { MetadataGenerator } from './services/metadataGenerator.js';
+import { AiVerifier } from './services/aiVerifier.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const uploadsDir = path.join(__dirname, 'data', 'temp_uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const upload = multer({
+  dest: uploadsDir,
+  limits: { fileSize: 30 * 1024 * 1024 } // 30MB max
+});
 
 const app = express();
 app.use(cors());
@@ -245,6 +262,143 @@ app.get('/api/supabase/queue', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Send a Test Low-Queue Email Alert
+ */
+app.post('/api/email/test', async (req, res) => {
+  try {
+    const result = await EmailAlertService.checkAndSendLowQueueAlert(5, 10);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Access Control Authentication Verify
+ */
+app.post('/api/auth/verify', (req, res) => {
+  try {
+    const { password } = req.body;
+    const correctPassword = process.env.DASHBOARD_PASSWORD || '21JG615Y3U7LQd0T6w5p575lR';
+    if (password === correctPassword) {
+      return res.json({ success: true, message: 'Authentication successful' });
+    }
+    return res.status(401).json({ success: false, error: 'Incorrect password' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * AI Pre-Analyze Uploaded Image (from phone/browser)
+ */
+app.post('/api/analyze/image', upload.single('image'), async (req, res) => {
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ error: 'No image file uploaded' });
+  }
+
+  try {
+    const selectedBoard = await BoardClassifier.selectBestBoard(file.path);
+    const generatedMetadata = await MetadataGenerator.generateMetadata({
+      imagePath: file.path,
+      boardName: selectedBoard.boardName,
+      topic: selectedBoard.topic
+    });
+
+    const verification = await AiVerifier.verifyAndCorrect({
+      imagePath: file.path,
+      initialMetadata: generatedMetadata,
+      selectedBoard
+    });
+
+    const finalMeta = verification.metadata;
+
+    res.json({
+      success: true,
+      boardId: selectedBoard.boardId,
+      boardName: selectedBoard.boardName,
+      title: finalMeta.title,
+      description: finalMeta.description,
+      altText: finalMeta.altText,
+      tags: finalMeta.tags
+    });
+  } catch (err) {
+    res.status(500).json({ error: `AI analysis failed: ${err.message}` });
+  } finally {
+    fs.promises.unlink(file.path).catch(() => {});
+  }
+});
+
+/**
+ * Upload Pin to Cloud Queue (from phone or browser)
+ */
+app.post('/api/upload/pin', upload.single('image'), async (req, res) => {
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ error: 'No image file uploaded' });
+  }
+
+  try {
+    const originalName = file.originalname || 'upload.png';
+    let { title, description, altText, boardId, boardName, tags, autoAnalyze } = req.body;
+
+    if (autoAnalyze === 'true' || !title || !boardId) {
+      const selectedBoard = await BoardClassifier.selectBestBoard(file.path);
+      const generatedMetadata = await MetadataGenerator.generateMetadata({
+        imagePath: file.path,
+        boardName: selectedBoard.boardName,
+        topic: selectedBoard.topic
+      });
+
+      const verification = await AiVerifier.verifyAndCorrect({
+        imagePath: file.path,
+        initialMetadata: generatedMetadata,
+        selectedBoard
+      });
+
+      const finalMeta = verification.metadata;
+      title = finalMeta.title;
+      description = finalMeta.description;
+      altText = finalMeta.altText;
+      tags = finalMeta.tags;
+      boardId = selectedBoard.boardId;
+      boardName = selectedBoard.boardName;
+    }
+
+    // 1. Upload to Supabase Storage
+    const { storagePath, publicUrl } = await SupabaseSyncService.uploadImage(file.path, originalName);
+
+    // 2. Insert into Supabase pin_queue table
+    const queuedPin = await SupabaseSyncService.enqueuePin({
+      filename: originalName,
+      storagePath,
+      imageUrl: publicUrl,
+      title: title.slice(0, 100),
+      description: description.slice(0, 500),
+      altText: altText ? altText.slice(0, 500) : '',
+      tags: tags || '',
+      boardId,
+      boardName: boardName || 'Finmunt'
+    });
+
+    broadcastSSE('queued', queuedPin);
+    broadcastSSE('activity_update', ActivityLogService.getSevenDayActivity());
+
+    res.json({
+      success: true,
+      message: 'Pin successfully queued in Supabase Cloud',
+      pin: queuedPin
+    });
+  } catch (err) {
+    console.error('Upload Pin error:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    fs.promises.unlink(file.path).catch(() => {});
   }
 });
 

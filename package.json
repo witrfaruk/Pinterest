@@ -16,7 +16,9 @@
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "googleapis": "^184.0.0",
+    "multer": "^2.4.0",
     "node-cron": "^3.0.3",
+    "nodemailer": "^10.0.16",
     "sharp": "^0.33.5"
   }
 }

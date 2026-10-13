@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pinterest Automation Engine • 100% Autonomous, Local AI & Open Source</title>
+  
+  <meta name="description" content="Open-source autonomous Pinterest publishing machine. Uses local Ollama (Qwen2.5-VL) for zero-cost image analysis, auto-board categorizer, stealth AI metadata scrubbing, self-correcting AI verification, and Supabase 24/7 cloud sync.">
+  <meta name="keywords" content="pinterest automation, ollama vision, open source pinterest bot, qwen2.5-vl, supabase pinterest scheduler, remove ai metadata, stealth pinterest publishing">
+  <meta name="author" content="Faruk (witrfaruk)">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://witrfaruk.github.io/Pinterest/">
+
+  <!-- Favicon Configuration from favicon_io -->
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png">
+  <link rel="shortcut icon" href="assets/favicon/favicon.ico">
+  <link rel="manifest" href="assets/favicon/site.webmanifest">
+  <meta name="theme-color" content="#FFDF00">
+  
+  <!-- Open Graph / Facebook / LinkedIn -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://witrfaruk.github.io/Pinterest/">
+  <meta property="og:title" content="Pinterest Automation Engine • 100% Autonomous & Open Source">
+  <meta property="og:description" content="Drop raw images. Local Multimodal AI analyzes content, scrubs AI tags, audits SEO limits, and publishes to Pinterest automatically.">
+  <meta property="og:image" content="assets/logo.png">
+  <meta property="og:site_name" content="Pinterest Automation">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://witrfaruk.github.io/Pinterest/">
+  <meta name="twitter:title" content="Pinterest Automation Engine • Open Source">
+  <meta name="twitter:description" content="Autonomous Pinterest publishing machine powered by local Multimodal AI and Supabase 24/7 cloud buffer.">
+  <meta name="twitter:image" content="assets/logo.png">
+
+  <!-- Schema.org JSON-LD Structured Data for Search Engines -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Pinterest Automation Engine",
+    "headline": "Autonomous Pinterest Publishing Machine with Local Multimodal Vision AI",
+    "operatingSystem": "Windows, macOS, Linux",
+    "applicationCategory": "AutomationApplication, DeveloperApplication",
+    "softwareVersion": "1.0.0",
+    "license": "https://opensource.org/licenses/MIT",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Faruk",
+      "url": "https://witrfaruk.vercel.app/social"
+    },
+    "description": "Self-hosted, autonomous Pinterest publishing engine using local Ollama (Qwen2.5-VL), board classification, AI verification, stealth metadata stripping, and 24/7 Supabase cloud queue."
+  }
+  </script>
+
+  <!-- Force Page To Start At Top On Refresh -->
+  <script>
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+  </script>
+
+  <!-- Google Fonts: Space Grotesk + Plus Jakarta Sans + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Neo-Brutalism Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ==========================================
+       MARQUEE TICKER TAPE
+       ========================================== -->
+  <div class="marquee-bar">
+    <div class="marquee-content">
+      <span>⚡ 100% OPEN SOURCE</span>
+      <span>🧠 ZERO CLOUD AI FEES • RUNS LOCALLY VIA OLLAMA</span>
+      <span>🎯 5-BOARD INTELLIGENT CATEGORIZER</span>
+      <span>🛡️ SELF-CORRECTING AI VERIFIER</span>
+      <span>🧼 STEALTH AI METADATA STRIPPER</span>
+      <span>⏰ 5 DAILY SCHEDULED SLOTS</span>
+      <span>☁️ SUPABASE 24/7 CLOUD SYNC</span>
+      <span>📊 REAL-TIME GOOGLE SHEETS LOGGER</span>
+      <span>⭐ STAR US ON GITHUB</span>
+      <!-- Repeated for continuous seamless loop -->
+      <span>⚡ 100% OPEN SOURCE</span>
+      <span>🧠 ZERO CLOUD AI FEES • RUNS LOCALLY VIA OLLAMA</span>
+      <span>🎯 5-BOARD INTELLIGENT CATEGORIZER</span>
+      <span>🛡️ SELF-CORRECTING AI VERIFIER</span>
+      <span>🧼 STEALTH AI METADATA STRIPPER</span>
+      <span>⏰ 5 DAILY SCHEDULED SLOTS</span>
+      <span>☁️ SUPABASE 24/7 CLOUD SYNC</span>
+      <span>📊 REAL-TIME GOOGLE SHEETS LOGGER</span>
+      <span>⭐ STAR US ON GITHUB</span>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       NAVBAR (EXACTLY 5 ITEMS SPECIFIED)
+       1. Logo
+       2. How to Use
+       3. Requirement
+       4. GitHub Button
+       5. Sponsor Button
+       ========================================== -->
+  <header class="navbar-container">
+    <nav class="navbar" aria-label="Main Navigation">
+      <!-- 1. Logo -->
+      <a href="#" class="nav-brand" title="Pinterest Automation Home">
+        <img src="assets/logo.png" alt="Pinterest Automation Logo" class="nav-logo-img">
+      </a>
+
+      <!-- Mobile Hamburger Toggle -->
+      <button class="mobile-toggle" id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+        ☰
+      </button>
+
+      <!-- Menu Items -->
+      <ul class="nav-menu" id="nav-menu">
+        <!-- 2. How to Use -->
+        <li>
+          <a href="#how-to-use" class="nav-link">How to Use</a>
+        </li>
+
+        <!-- 3. Requirement -->
+        <li>
+          <a href="#requirements" class="nav-link">Requirements</a>
+        </li>
+
+        <!-- 4. GitHub Button -->
+        <li>
+          <a href="https://github.com/witrfaruk/Pinterest" target="_blank" rel="noopener noreferrer" class="btn-neo btn-github">
+            <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+            GitHub
+          </a>
+        </li>
+
+        <!-- 5. Sponsor Button -->
+        <li>
+          <a href="https://ko-fi.com/witrfaruk" target="_blank" rel="noopener noreferrer" class="btn-neo btn-sponsor" title="Support the project on Ko-fi">
+            <svg height="20" width="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            Sponsor
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ==========================================
+       HERO SECTION
+       ========================================== -->
+  <section class="hero-section">
+    <div class="hero-grid">
+      <!-- Left Column: Pitch & CTAs -->
+      <div>
+        <div class="hero-pill-badge">
+          🚀 100% Free & Open Source
+        </div>
+        
+        <h1 class="hero-title">
+          Stop paying for AI Pins. <br>
+          <span class="highlight-red">Drop Images.</span> <br>
+          <span class="highlight-yellow">Auto Publish.</span>
+        </h1>
+
+        <p class="hero-desc">
+          An autonomous, self-hosted machine powered by <strong>Local Multimodal AI (Qwen2.5-VL)</strong>. 
+          Drop raw images into a folder &rarr; the local model analyzes the visual content &rarr; writes audited SEO metadata &rarr; and publishes them directly to Pinterest via the official v5 API. <strong>Zero cloud AI bills.</strong>
+        </p>
+
+        <!-- Main CTAs -->
+        <div class="hero-actions">
+          <a href="https://github.com/witrfaruk/Pinterest/archive/refs/heads/main.zip" id="download-zip-btn" class="btn-neo btn-primary" title="Download the full source code as a ZIP archive">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download ZIP
+          </a>
+
+          <a href="#how-to-use" class="btn-neo btn-secondary">
+            ⚡ Quick Setup Guide
+          </a>
+        </div>
+
+        <!-- 1-Click Copy Command Box -->
+        <div class="quick-clone-box">
+          <span><span class="clone-code">$</span> git clone https://github.com/witrfaruk/Pinterest.git</span>
+          <button class="btn-copy-code" data-copy="git clone https://github.com/witrfaruk/Pinterest.git" title="Copy git clone command">
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Terminal Simulator -->
+      <div>
+        <div class="terminal-card">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <span class="dot dot-red"></span>
+              <span class="dot dot-yellow"></span>
+              <span class="dot dot-green"></span>
+            </div>
+            <span class="terminal-title">publisherEngine.js — Node.js v20.x</span>
+            <span style="font-size: 0.8rem; color: #71717A;">LIVE STREAM</span>
+          </div>
+          <div class="terminal-body" id="terminal-stream">
+            <!-- Simulated logs auto-generated by script.js -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       WHAT EXACTLY IS THIS? (DEEP DIVE)
+       ========================================== -->
+  <section class="section" style="border-top: var(--border-width) solid var(--border-color); background-color: #FFFFFF;">
+    <div style="text-align: center; max-width: 800px; margin: 0 auto 56px;">
+      <span class="section-tag">Zero Bullshit Explanation</span>
+      <h2 class="section-heading">What Exactly Is This Machine?</h2>
+      <p class="section-subheading" style="margin: 0 auto;">
+        Most Pinterest automation tools charge $20 to $50/month for simple wrappers that send your images to paid cloud APIs. This project replaces that entirely with a private, high-speed, local pipeline.
+      </p>
+    </div>
+
+    <div class="what-grid">
+      <!-- Card 1 -->
+      <div class="neo-card">
+        <div class="card-icon icon-yellow">🧠</div>
+        <h3 class="card-title">Local Multimodal Vision AI</h3>
+        <p class="card-text">
+          Powered by <strong>Qwen2.5-VL (3B)</strong> running locally via Ollama. It reads the graphic text, colors, diagrams, and visual themes right on your GPU/CPU with <strong>zero cloud API fees</strong>.
+        </p>
+        <span class="card-badge">Ollama • qwen2.5vl:3b</span>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="neo-card">
+        <div class="card-icon icon-red">🎯</div>
+        <h3 class="card-title">Intelligent 5-Board Categorizer</h3>
+        <p class="card-text">
+          Instead of dumping all pins into one board, the AI dynamically compares your graphic against all 5 configured Pinterest boards and routes it to the single best board with reasoned intent.
+        </p>
+        <span class="card-badge">Step 8 Classification</span>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="neo-card">
+        <div class="card-icon icon-mint">🛡️</div>
+        <h3 class="card-title">Self-Correcting AI Verifier</h3>
+        <p class="card-text">
+          Pinterest strictly penalizes truncated metadata. Step 9 runs an automated rewrite loop that audits every title (&le;100 chars), description (&le;500 chars), and alt text (&le;500 chars) before upload.
+        </p>
+        <span class="card-badge">Up to 3x Rewrite Loops</span>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="neo-card">
+        <div class="card-icon icon-cyan">⏰</div>
+        <h3 class="card-title">Fixed Daily Peak Slots</h3>
+        <p class="card-text">
+          Automated cron engine schedules pins for fixed high-engagement slots (<code>17:30</code>, <code>19:30</code>, <code>21:30</code>, <code>23:30</code>, and <code>01:30</code> IST). Never spamming or triggering spam flags.
+        </p>
+        <span class="card-badge">Cron Scheduler Engine</span>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="neo-card">
+        <div class="card-icon icon-purple">☁️</div>
+        <h3 class="card-title">Supabase 24/7 Cloud Queue</h3>
+        <p class="card-text">
+          Images dropped in your local folder are immediately pre-processed and synced to Supabase Storage & Database queue, letting you schedule dozens of pins in advance without leaving your PC awake.
+        </p>
+        <span class="card-badge">Supabase S3 & pg_cron</span>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="neo-card">
+        <div class="card-icon icon-yellow">📊</div>
+        <h3 class="card-title">Live 10-Col Google Sheets Sync</h3>
+        <p class="card-text">
+          Every publish attempt and success is automatically appended to a 10-column Google Spreadsheet (Date, Post Name, Time, Tries, Title, Description, Alt Text, Board, Board ID, Status).
+        </p>
+        <span class="card-badge">Official Google Sheets API</span>
+      </div>
+
+      <!-- Card 7: Stealth Metadata Stripper -->
+      <div class="neo-card" style="grid-column: 1 / -1; background-color: #FFFDF0;">
+        <div class="card-icon icon-red">🛡️</div>
+        <h3 class="card-title">Stealth AI & EXIF Metadata Remover</h3>
+        <p class="card-text">
+          Social platforms like Pinterest inspect uploaded files for hidden AI generator tags, prompt parameters, Midjourney/DALL-E software markers, C2PA credentials, and EXIF camera data. Before uploading to Supabase Storage or Pinterest API, our high-speed <strong>Sharp engine automatically scrubs all EXIF, XMP, IPTC, and generator chunks</strong> — leaving only 100% clean, native pixel data.
+        </p>
+        <span class="card-badge" style="background-color: var(--color-mint);">Sharp Pipeline • Zero AI Tags Preserved</span>
+      </div>
+    </div>
+
+    <!-- Pipeline Flowchart -->
+    <div class="pipeline-banner">
+      <div style="text-align: center; margin-bottom: 32px;">
+        <span class="section-tag" style="background-color: var(--color-mint);">12-Step Production Pipeline</span>
+        <h3 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 900;">How An Image Moves Through The Machine</h3>
+      </div>
+
+      <div class="pipeline-steps">
+        <div class="step-box">
+          <span class="step-num">Step 1</span>
+          <h4 class="step-title">📥 Drop Image</h4>
+          <p class="step-desc">Drop raw JPG/PNG/WebP into your <code>Images/</code> folder.</p>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Step 2</span>
+          <h4 class="step-title">🧠 Ollama Vision</h4>
+          <p class="step-desc">Qwen2.5-VL analyzes the graphics and extracts key concepts.</p>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Step 3</span>
+          <h4 class="step-title">✍️ Metadata Gen</h4>
+          <p class="step-desc">Generates click-worthy title, description, tags & alt-text.</p>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Step 4</span>
+          <h4 class="step-title">🎯 Classify Board</h4>
+          <p class="step-desc">Picks the single best target board out of your 5 boards.</p>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Step 5</span>
+          <h4 class="step-title">🛡️ AI Verifier</h4>
+          <p class="step-desc">Strictly audits character limits and accuracy loops.</p>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Step 6</span>
+          <h4 class="step-title">🧼 Scrub AI Tags</h4>
+          <p class="step-desc">Strips all EXIF, XMP, IPTC & AI generator markers via Sharp.</p>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Step 7</span>
+          <h4 class="step-title">🚀 Pinterest v5 API</h4>
+          <p class="step-desc">Uploads media & creates official Pin via verified v5 API.</p>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Step 8</span>
+          <h4 class="step-title">📊 Google Sheet</h4>
+          <p class="step-desc">Appends real-time row to spreadsheet tracker.</p>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Step 8</span>
+          <h4 class="step-title">🗑️ Safe FIFO Delete</h4>
+          <p class="step-desc">Image removed only after HTTP 201 Created is confirmed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       REQUIREMENTS SECTION (#requirements)
+       ========================================== -->
+  <section class="section" id="requirements">
+    <div>
+      <span class="section-tag">Prerequisites Checklist</span>
+      <h2 class="section-heading">What Things Are Needed?</h2>
+      <p class="section-subheading">
+        Before you hit run, ensure you have these 4 tools ready. Everything is 100% free or uses standard developer tiers.
+      </p>
+    </div>
+
+    <div class="req-grid">
+      <!-- Req 1: Node.js -->
+      <div class="req-card">
+        <div>
+          <div class="req-header">
+            <h3 class="req-name">1. Node.js (v18+ or v20+)</h3>
+            <span class="req-tag tag-required">Required</span>
+          </div>
+          <p class="req-desc">
+            The core engine is built on modern ESM Node.js using native fetch, file watchers, and Express.
+          </p>
+        </div>
+        <div class="req-code-box">
+          <span>node -v  # Should be v18.0.0 or higher</span>
+          <button class="btn-copy-code" data-copy="node -v">Copy</button>
+        </div>
+      </div>
+
+      <!-- Req 2: Ollama & Qwen2.5-VL -->
+      <div class="req-card">
+        <div>
+          <div class="req-header">
+            <h3 class="req-name">2. Ollama with Qwen2.5-VL</h3>
+            <span class="req-tag tag-required">Required</span>
+          </div>
+          <p class="req-desc">
+            Download Ollama (free local LLM runner) and pull the high-speed 3B multimodal vision model.
+          </p>
+        </div>
+        <div class="req-code-box">
+          <span>ollama pull qwen2.5vl:3b</span>
+          <button class="btn-copy-code" data-copy="ollama pull qwen2.5vl:3b">Copy</button>
+        </div>
+      </div>
+
+      <!-- Req 3: Pinterest Developer App -->
+      <div class="req-card">
+        <div>
+          <div class="req-header">
+            <h3 class="req-name">3. Pinterest Developer App</h3>
+            <span class="req-tag tag-required">Required</span>
+          </div>
+          <p class="req-desc">
+            Register a free developer app at <strong>developers.pinterest.com</strong> to get your App ID, Secret, and Access Token for the official v5 API.
+          </p>
+        </div>
+        <div class="req-code-box">
+          <span>PINTEREST_APP_ID=... PINTEREST_APP_SECRET=...</span>
+          <button class="btn-copy-code" data-copy="https://developers.pinterest.com/">Link</button>
+        </div>
+      </div>
+
+      <!-- Req 4: Supabase Project -->
+      <div class="req-card">
+        <div>
+          <div class="req-header">
+            <h3 class="req-name">4. Supabase Project (Free Tier)</h3>
+            <span class="req-tag tag-required">Required</span>
+          </div>
+          <p class="req-desc">
+            A free Supabase account for cloud storage and the <code>pin_queue</code> Postgres table. Lets you queue pins 24/7.
+          </p>
+        </div>
+        <div class="req-code-box">
+          <span>SUPABASE_URL=... SUPABASE_ANON_KEY=...</span>
+          <button class="btn-copy-code" data-copy="https://supabase.com/">Link</button>
+        </div>
+      </div>
+
+      <!-- Req 5: Google Sheets (Optional) -->
+      <div class="req-card" style="grid-column: 1 / -1;">
+        <div class="req-header">
+          <h3 class="req-name">5. Google Spreadsheet Live Logging</h3>
+          <span class="req-tag tag-optional">Optional</span>
+        </div>
+        <p class="req-desc">
+          If you want live 10-column spreadsheet tracking for clients or analytics, provide your Google Spreadsheet ID and service account credentials in <code>.env</code>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       HOW TO USE SECTION (#how-to-use)
+       ========================================== -->
+  <section class="section" id="how-to-use" style="border-top: var(--border-width) solid var(--border-color); background-color: #FFFFFF;">
+    <div>
+      <span class="section-tag">Step-by-Step Walkthrough</span>
+      <h2 class="section-heading">How To Use The Engine</h2>
+      <p class="section-subheading">
+        Setup takes less than 3 minutes. Follow these simple steps to start publishing pins automatically.
+      </p>
+    </div>
+
+    <div class="steps-vertical">
+      <!-- Step 1 -->
+      <div class="guide-step">
+        <div class="step-marker">01</div>
+        <div class="step-content">
+          <h3>Clone or Download the Repository</h3>
+          <p>You can either clone the repo with Git or click the ZIP download button below.</p>
+          <div class="code-block">
+            <code>git clone https://github.com/witrfaruk/Pinterest.git<br>cd Pinterest/code</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="guide-step">
+        <div class="step-marker">02</div>
+        <div class="step-content">
+          <h3>Install Dependencies</h3>
+          <p>Navigate inside the <code>code/</code> folder and install the required npm libraries.</p>
+          <div class="code-block">
+            <code>npm install</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="guide-step">
+        <div class="step-marker">03</div>
+        <div class="step-content">
+          <h3>Configure Your Environment (<code>.env</code>)</h3>
+          <p>Copy <code>.env.example</code> to <code>.env</code> in the <code>code/</code> folder and add your credentials:</p>
+          <div class="code-block">
+            <code>
+PORT=3000<br>
+PINTEREST_APP_ID=your_pinterest_app_id<br>
+PINTEREST_APP_SECRET=your_pinterest_app_secret<br>
+PINTEREST_ACCESS_TOKEN=your_token<br>
+OLLAMA_HOST=http://127.0.0.1:11434<br>
+OLLAMA_MODEL=qwen2.5vl:3b<br>
+SUPABASE_URL=https://your-project.supabase.co<br>
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_key<br>
+PUBLISH_SLOTS=17:30,19:30,21:30,23:30,01:30
+            </code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="guide-step">
+        <div class="step-marker">04</div>
+        <div class="step-content">
+          <h3>Setup Your 5 Boards (<code>boards.json</code>)</h3>
+          <p>In <code>code/backend/boards.json</code>, paste your 5 Pinterest board IDs, names, and topics. The AI uses this to route every pin to the right place.</p>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="guide-step">
+        <div class="step-marker">05</div>
+        <div class="step-content">
+          <h3>Start the Engine & Drop Images!</h3>
+          <p>Launch the machine. Drop any batch of images into the <code>Images/</code> folder. The auto-watcher detects them within 5 seconds and handles the entire workflow.</p>
+          <div class="code-block">
+            <code>npm start</code>
+          </div>
+          <p style="margin-top: 14px;">
+            Open <strong>http://localhost:3000</strong> in your browser to view your live visual dashboard!
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 6: Supabase Secrets -->
+      <div class="guide-step">
+        <div class="step-marker" style="background-color: var(--color-mint);">06</div>
+        <div class="step-content">
+          <h3>Push Secrets to Supabase Cloud (For 24/7 Publishing)</h3>
+          <p>
+            To let Supabase Edge Functions and cron workers publish pins on schedule even when your computer is shut down, push your secrets to Supabase Cloud:
+          </p>
+
+          <div style="margin: 16px 0 6px;">
+            <strong style="font-family: var(--font-display); font-size: 1.1rem;">⚡ Option 1: One-Command CLI Push (Fastest)</strong>
+          </div>
+          <div class="code-block">
+            <code># 1. Login to Supabase CLI<br>
+npx supabase login<br><br>
+# 2. Link your project (find project-ref in your Supabase project URL)<br>
+npx supabase link --project-ref your_project_ref_id<br><br>
+# 3. Push all secrets from your .env in one single command!<br>
+npx supabase secrets set --env-file code/.env</code>
+          </div>
+
+          <div style="margin: 22px 0 6px;">
+            <strong style="font-family: var(--font-display); font-size: 1.1rem;">🖥️ Option 2: Supabase Web Dashboard</strong>
+          </div>
+          <p style="font-size: 0.95rem; margin-bottom: 10px;">
+            1. Open your project on <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" style="color: var(--color-red); font-weight: 800;">supabase.com/dashboard</a>.<br>
+            2. Go to <strong>Project Settings &rarr; Edge Functions &rarr; Secrets</strong>.<br>
+            3. Click <strong>"Add new secret"</strong> and save:
+          </p>
+          <div class="code-block">
+            <code>PINTEREST_ACCESS_TOKEN=your_pinterest_token<br>
+PINTEREST_APP_ID=your_app_id<br>
+PINTEREST_APP_SECRET=your_app_secret<br>
+DASHBOARD_PASSWORD=your_dashboard_password</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       DOWNLOAD & QUICK LAUNCH CALLOUT
+       ========================================== -->
+  <section class="section">
+    <div class="download-banner">
+      <span class="section-tag" style="background-color: #FFFFFF;">Get Started In 60 Seconds</span>
+      <h2>Ready To Automate Your Pinterest?</h2>
+      <p>
+        Grab the complete, verified open-source codebase. Drop your first image into <code>Images/</code> and let local AI do the rest.
+      </p>
+
+      <div class="download-btn-group">
+        <!-- Direct ZIP -->
+        <a href="https://github.com/witrfaruk/Pinterest/archive/refs/heads/main.zip" class="btn-neo btn-primary" title="Download latest release ZIP">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download Source (ZIP)
+        </a>
+
+        <!-- GitHub Repo -->
+        <a href="https://github.com/witrfaruk/Pinterest" target="_blank" rel="noopener noreferrer" class="btn-neo btn-github">
+          <svg height="22" width="22" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+
+        <!-- Ko-fi Sponsor -->
+        <a href="https://ko-fi.com/witrfaruk" target="_blank" rel="noopener noreferrer" class="btn-neo btn-sponsor">
+          <svg height="22" width="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          Sponsor on Ko-fi
+        </a>
+
+        <!-- Contact Faruk -->
+        <a href="https://witrfaruk.vercel.app/social" target="_blank" rel="noopener noreferrer" class="btn-neo" style="background-color: var(--color-cyan);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+          </svg>
+          Contact Faruk
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       FOOTER
+       ========================================== -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <img src="assets/logo.png" alt="Pinterest Automation Logo" class="footer-logo">
+        <span class="footer-copy">
+          © 2026 Pinterest Automation Engine • Released under the <strong>MIT License</strong>.
+        </span>
+      </div>
+
+      <div class="footer-links">
+        <a href="#how-to-use">How to Use</a>
+        <a href="#requirements">Requirements</a>
+        <a href="https://github.com/witrfaruk/Pinterest" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://ko-fi.com/witrfaruk" target="_blank" rel="noopener noreferrer">Sponsor</a>
+        <a href="https://witrfaruk.vercel.app/social" target="_blank" rel="noopener noreferrer" style="color: var(--color-mint); font-weight: 800;">Contact</a>
+        <a href="LICENSE">License</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Interactive JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>

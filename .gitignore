@@ -1,8 +1,10 @@
 # Dependencies
 node_modules/
+code/node_modules/
 
 # Environment variables & secrets (CRITICAL: NEVER COMMIT SECRETS)
 .env
+code/.env
 .env.local
 .env.*.local
 *.pem
@@ -14,15 +16,22 @@ data/history.json
 data/slot_history.json
 data/*.xlsx
 data/*.csv
-!data/.gitkeep
+code/backend/data/history.json
+code/backend/data/slot_history.json
+code/backend/data/*.xlsx
+code/backend/data/*.csv
+code/backend/data/temp_uploads/
 
 # Local user image queue
 Images/*
+images/*
 !Images/.gitkeep
+!images/.gitkeep
 
 # Local tests & internal utility scripts
 test/
-scripts/
+code/backend/test/test_sandbox/
+code/backend/supabase/.temp/
 
 # System & OS logs
 npm-debug.log*

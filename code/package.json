@@ -1,0 +1,23 @@
+{
+  "name": "pinterest-local-publisher",
+  "version": "1.0.0",
+  "description": "Local Pinterest automation machine using official Pinterest API and Ollama Vision",
+  "main": "backend/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "googleapis": "^184.0.0",
+    "multer": "^2.4.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^10.0.16",
+    "sharp": "^0.33.5"
+  }
+}

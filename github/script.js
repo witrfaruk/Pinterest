@@ -4,9 +4,15 @@
 if ('scrollRestoration' in history) {
   history.scrollRestoration = 'manual';
 }
+if (window.location.hash) {
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+}
 window.scrollTo(0, 0);
 
 window.addEventListener('beforeunload', () => {
+  if (window.location.hash) {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
   window.scrollTo(0, 0);
 });
 
@@ -54,9 +60,33 @@ document.addEventListener('DOMContentLoaded', () => {
       link.addEventListener('click', () => {
         navMenu.classList.remove('nav-menu-open');
         mobileToggle.setAttribute('aria-expanded', 'false');
-      });
     });
   }
+
+  // Smooth in-page navigation without adding # hash to the browser URL bar
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href');
+      if (!href || href === '#') return;
+      const targetId = href.slice(1);
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        e.preventDefault();
+        const headerOffset = 80;
+        const elementPosition = targetEl.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+
+        if (history.replaceState) {
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      }
+    });
+  });
 
   // 3. Simulated Real-time Terminal Log Streamer
   const terminalBody = document.getElementById('terminal-stream');

@@ -1,8 +1,6 @@
-# Dependencies
 node_modules/
 code/node_modules/
 
-# Environment variables & secrets (CRITICAL: NEVER COMMIT SECRETS)
 .env
 code/.env
 .env.local
@@ -11,7 +9,6 @@ code/.env
 *.key
 google_service_account.json
 
-# Local Upload and Slot History Data
 data/history.json
 data/slot_history.json
 data/*.xlsx
@@ -22,18 +19,15 @@ code/backend/data/*.xlsx
 code/backend/data/*.csv
 code/backend/data/temp_uploads/
 
-# Local user image queue
 Images/*
 images/*
 !Images/README.md
 !images/README.md
 
-# Local tests & internal utility scripts
 test/
 code/backend/test/test_sandbox/
 code/backend/supabase/.temp/
 
-# System & OS logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -42,5 +36,3 @@ Thumbs.db
 .vscode/
 .idea/
 supabase/.temp/
-
-

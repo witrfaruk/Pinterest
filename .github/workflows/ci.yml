@@ -17,6 +17,7 @@ jobs:
       with:
         node-version: 20.x
         cache: 'npm'
+        cache-dependency-path: 'code/package-lock.json'
     - name: Verify Code Syntax
       run: |
         node --check code/backend/server.js

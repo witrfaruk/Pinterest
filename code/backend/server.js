@@ -67,18 +67,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const frontendDir = path.resolve(__dirname, '../frontend');
-app.use(express.static(frontendDir));
-
 // Local preview for GitHub Pages site
 const githubDir = path.resolve(__dirname, '../../github');
-app.use('/landing', express.static(githubDir));
-app.get('/landing', (req, res) => {
-  res.sendFile(path.join(githubDir, 'index.html'));
-});
+if (fs.existsSync(githubDir)) {
+  app.use('/landing', express.static(githubDir));
+  app.get('/landing', (req, res) => {
+    res.sendFile(path.join(githubDir, 'index.html'));
+  });
+}
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(frontendDir, 'index.html'));
+  res.json({
+    name: 'Pinterest Autonomous Publishing Engine',
+    status: 'online',
+    mode: 'headless',
+    storage: 'Supabase Cloud',
+    publishSlots: getPublishSlots(),
+    sourceImagesDir: IMAGES_DIR
+  });
 });
 
 // Server-Sent Events (SSE) clients

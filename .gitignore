@@ -25,8 +25,8 @@ code/backend/data/temp_uploads/
 # Local user image queue
 Images/*
 images/*
-!Images/.gitkeep
-!images/.gitkeep
+!Images/README.md
+!images/README.md
 
 # Local tests & internal utility scripts
 test/

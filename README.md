@@ -88,21 +88,23 @@ Every publish automatically appends a structured 10-column record to Google Shee
 ```text
 Pinterest/
 ├── Images/              # 📥 Drop Zone: Drop images here (automation detects them)
-├── github/              # 📖 Repository Documentation & License
-│   ├── README.md        # Documentation
-│   └── LICENSE          # MIT License
-└── code/                # 💻 All application code & dependencies
-    ├── .env             # 🔑 Private environment credentials & API keys
-    ├── package.json     # 📦 Dependencies & run scripts
-    ├── frontend/        # 🖥️ Web Dashboard (HTML, CSS, modern JS UI)
-    └── backend/         # ⚙️ Automation Engine, API routes, Ollama AI & Supabase sync
-        ├── services/    # Vision AI, Scheduler, Pinterest API, Sheets & Supabase
-        ├── data/        # Persistent database cache & upload history
-        ├── supabase/    # Database SQL schemas & migrations
-        ├── test/        # Automated verification tests
-        ├── boards.json  # 5 Configured Pinterest boards
-        ├── config.js    # Centralized limits & environment configuration
-        └── server.js    # Express engine entry point
+│   └── README.md        # Pipeline instructions & format guide
+├── github/              # 🌐 Neo-Brutalist Landing Page & GitHub Pages assets
+│   ├── assets/          # Project logo & favicon assets
+│   ├── index.html       # Landing page portal
+│   ├── style.css        # Neo-brutalist design system
+│   └── script.js        # Direct ZIP download & interactions
+├── code/                # 💻 All automation engine code & dependencies
+│   ├── .env.example     # 🔑 Public environment template (zero secrets)
+│   ├── package.json     # 📦 Dependencies & start scripts
+│   └── backend/         # ⚙️ Headless Engine, Ollama AI & Supabase Cloud Sync
+│       ├── services/    # Vision AI, Scheduler, Pinterest API, Metadata Stripper & Supabase
+│       ├── supabase/    # Cloud Edge Functions, SQL schemas & pg_cron migrations
+│       ├── boards.json  # 5 Configured Pinterest boards
+│       ├── config.js    # Centralized limits & environment configuration
+│       └── server.js    # Express automation service entry point
+├── LICENSE              # ⚖️ MIT License
+└── README.md            # 📖 Documentation & setup guide
 ```
 
 ---
@@ -123,9 +125,15 @@ cd code
 npm install
 npm start
 ```
-Open **[http://localhost:3000](http://localhost:3000)** in your browser!
 
-### 3. Push Secrets to Supabase Cloud (24/7 Publishing)
+### 3. How to Publish Pins
+Simply drop your images (`.png`, `.jpg`, `.webp`) into the `Images/` folder.
+- The engine automatically strips all AI metadata tags.
+- Ollama Vision analyzes the image and crafts high-converting titles, descriptions, and tags.
+- Pins are synced directly into Supabase Storage & `pin_queue`.
+- 24/7 cloud cron triggers publish your pins across your 5 daily slots automatically!
+
+### 4. Push Secrets to Supabase Cloud (24/7 Publishing)
 To allow Supabase Edge Functions and cron jobs to publish when your computer is off:
 ```bash
 # Method A: One-command push from .env file
@@ -136,19 +144,6 @@ npx supabase secrets set --env-file code/.env
 # Or Method B: In Supabase Web Dashboard
 # Project Settings -> Edge Functions -> Secrets -> Add PINTEREST_ACCESS_TOKEN & APP_SECRET
 ```
-
-### 4. 1-Click Pinterest OAuth
-1. Open [http://localhost:3000](http://localhost:3000).
-2. Click **"Pinterest: Connect API"** &rarr; **"Authorize with Pinterest"**.
-3. Grant permissions & you're live!
-
----
-
-## 🎨 Dashboard Preview
-
-- **Pinterest Red (`#E60023`) Aesthetic**: Clean rounded cards, pill badges, and smooth animations.
-- **Rolling 7-Calendar-Day Feed**: Full visibility into daily progress, completed slots, and skipped states.
-- **Zero Mock Data**: Displays only real scheduled executions and true filesystem states.
 
 ---
 

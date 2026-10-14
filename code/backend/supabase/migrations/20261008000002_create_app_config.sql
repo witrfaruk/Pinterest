@@ -30,7 +30,7 @@ VALUES
     ('SMTP_PASS', 'your_google_app_password', 'Google App Password for sender email'),
     ('ALERT_RECIPIENTS', 'your_alert_recipient@example.com', 'Comma-separated recipient emails for low queue alerts'),
     ('ALERT_THRESHOLD', '5', 'Minimum number of pending pins remaining before triggering alert email'),
-    ('GOOGLE_SHEET_WEBHOOK_URL', '', 'Google Sheet webhook URL for Finmunt log sync')
+    ('GOOGLE_SHEET_WEBHOOK_URL', '', 'Google Sheet webhook URL for upload log sync')
 ON CONFLICT (key) DO UPDATE SET 
     value = EXCLUDED.value,
     updated_at = NOW();

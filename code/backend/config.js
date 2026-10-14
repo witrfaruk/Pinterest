@@ -55,7 +55,7 @@ export const LIMITS = {
 // Google Spreadsheet Configuration
 export const GOOGLE_SPREADSHEET_CONFIG = {
   spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID || '',
-  sheetName: process.env.GOOGLE_SHEET_NAME || 'Finmunt',
+  sheetName: process.env.GOOGLE_SHEET_NAME || 'example_pinterest',
   serviceAccountKeyFile: process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE || (fs.existsSync(path.join(rootDir, 'google_service_account.json')) ? path.join(rootDir, 'google_service_account.json') : path.join(__dirname, 'google_service_account.json')),
   webhookUrl: process.env.GOOGLE_SHEET_WEBHOOK_URL || ''
 };
@@ -83,35 +83,35 @@ export function getBoardsConfig() {
       id: "1152640167071860781",
       name: "Make Money",
       topic: "Make Money",
-      url: "https://www.pinterest.com/Finmunt/make-money/",
+      url: "https://www.pinterest.com/example_pinterest/make-money/",
       instructions: "Side hustles, online income, freelancing, earning extra cash, passive income streams, work from home jobs, monetization, digital marketing, ecommerce."
     },
     {
       id: "1152640167071860782",
       name: "Save Money",
       topic: "Save Money",
-      url: "https://www.pinterest.com/Finmunt/save-money/",
+      url: "https://www.pinterest.com/example_pinterest/save-money/",
       instructions: "Money-saving hacks, frugal living tips, cutting expenses, grocery budgeting, frugal lifestyle, emergency funds, deals and discount strategies."
     },
     {
       id: "1152640167071860784",
       name: "Budgeting",
       topic: "Budgeting",
-      url: "https://www.pinterest.com/Finmunt/budgeting/",
+      url: "https://www.pinterest.com/example_pinterest/budgeting/",
       instructions: "Budget planners, monthly budget systems (50/30/20 rule, zero-based budget, cash envelopes), expense tracking, family and personal financial planning."
     },
     {
       id: "1152640167071860785",
       name: "Investing",
       topic: "Investing",
-      url: "https://www.pinterest.com/Finmunt/investing/",
+      url: "https://www.pinterest.com/example_pinterest/investing/",
       instructions: "Stock market basics, index funds, ETFs, dividend investing, real estate, compound interest, retirement accounts (401k, Roth IRA), long-term wealth building."
     },
     {
       id: "1152640167071860786",
       name: "Debt & Credit",
       topic: "Debt & Credit",
-      url: "https://www.pinterest.com/Finmunt/debt-credit/",
+      url: "https://www.pinterest.com/example_pinterest/debt-credit/",
       instructions: "Credit score improvement hacks, debt payoff strategies (debt snowball and avalanche), credit card management, loans, achieving debt freedom."
     }
   ];

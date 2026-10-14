@@ -89,7 +89,7 @@ class PublisherEngine extends EventEmitter {
           });
         }
 
-        // Log to Google Spreadsheet (Finmunt)
+        // Log to Google Spreadsheet
         await SpreadsheetLogger.recordUpload(finalRecord, uploadHistory.getAll());
 
         // Low queue check (send email if <= 5 pins remaining)

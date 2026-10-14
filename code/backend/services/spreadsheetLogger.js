@@ -3,7 +3,7 @@ import ExcelJS from 'exceljs';
 import { EXCEL_FILE, CSV_FILE } from '../config.js';
 import { GoogleSheetsLogger } from './googleSheetsLogger.js';
 
-// Exact 10 headers matching user's Google Spreadsheet (Sheet: "Finmunt")
+// Exact 10 headers matching Google Spreadsheet
 const HEADERS = [
   { header: 'Date', key: 'date', width: 14 },
   { header: 'Post Name', key: 'postName', width: 28 },
@@ -56,8 +56,8 @@ export class SpreadsheetLogger {
 
     const todayDate = new Date().toISOString().split('T')[0];
 
-    // Sheet 1: Finmunt (Today)
-    const todaySheet = workbook.addWorksheet('Finmunt');
+    // Sheet 1: Today
+    const todaySheet = workbook.addWorksheet(process.env.GOOGLE_SHEET_NAME || 'Uploads');
     this.formatSheet(todaySheet, allHistory.filter(item => item.date === todayDate));
 
     // Sheet 2: All Uploads
@@ -125,7 +125,7 @@ export class SpreadsheetLogger {
       // 2. Update local Excel (.xlsx)
       await this.updateExcel(allHistory);
 
-      // 3. Sync to Google Spreadsheet "Finmunt"
+      // 3. Sync to Google Spreadsheet
       await GoogleSheetsLogger.appendRow(record);
     } catch (err) {
       console.error('Error logging to spreadsheet:', err.message);

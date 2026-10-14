@@ -30,15 +30,15 @@ async function sendLowQueueAlert(remainingCount: number) {
     });
 
     const mailOptions = {
-      from: `"Finmunt Pinterest Alert" <${SMTP_USER}>`,
+      from: `"Pinterest Alert" <${SMTP_USER}>`,
       to: ALERT_RECIPIENTS,
-      subject: `⚠️ Finmunt Pinterest Alert: Only ${remainingCount} Pin${remainingCount === 1 ? '' : 's'} Left in Queue!`,
+      subject: `⚠️ Pinterest Alert: Only ${remainingCount} Pin${remainingCount === 1 ? '' : 's'} Left in Queue!`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
           <div style="display: flex; align-items: center; margin-bottom: 20px;">
             <div style="background: #e60023; color: #ffffff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; margin-right: 12px; text-align: center; line-height: 40px;">P</div>
             <div>
-              <h2 style="margin: 0; color: #1e293b; font-size: 20px;">Finmunt Pinterest Queue Alert</h2>
+              <h2 style="margin: 0; color: #1e293b; font-size: 20px;">Pinterest Queue Alert</h2>
               <p style="margin: 2px 0 0 0; color: #64748b; font-size: 13px;">Cloud Automation Engine</p>
             </div>
           </div>
@@ -46,7 +46,7 @@ async function sendLowQueueAlert(remainingCount: number) {
           <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 6px; margin-bottom: 20px;">
             <h3 style="margin: 0 0 8px 0; color: #991b1b; font-size: 16px;">Low Queue Warning: ${remainingCount} Pins Remaining</h3>
             <p style="margin: 0; color: #7f1d1d; font-size: 14px; line-height: 1.5;">
-              The Finmunt 24/7 cloud publishing queue is running low. There are only <strong>${remainingCount}</strong> scheduled pins left to publish.
+              The 24/7 cloud publishing queue is running low. There are only <strong>${remainingCount}</strong> scheduled pins left to publish.
             </p>
           </div>
 
@@ -60,7 +60,7 @@ async function sendLowQueueAlert(remainingCount: number) {
           </div>
 
           <div style="border-top: 1px solid #e2e8f0; padding-top: 14px; color: #94a3b8; font-size: 12px; text-align: center;">
-            Sent automatically by Finmunt Supabase Cloud Engine to: ${ALERT_RECIPIENTS}
+            Sent automatically by Supabase Cloud Engine to: ${ALERT_RECIPIENTS}
           </div>
         </div>
       `,
@@ -141,7 +141,7 @@ serve(async (req) => {
     const pinUrl = `https://www.pinterest.com/pin/${pinId}/`;
     console.log(`✓ Pinterest Pin created: ${pinUrl}`);
 
-    // 3. Log to Google Spreadsheet (Finmunt)
+    // 3. Log to Google Spreadsheet
     if (GOOGLE_SHEET_WEBHOOK_URL) {
       const now = new Date();
       const dateStr = now.toISOString().split("T")[0];
@@ -165,7 +165,7 @@ serve(async (req) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sheetName: "Finmunt",
+          sheetName: Deno.env.get("GOOGLE_SHEET_NAME") || "Uploads",
           row: sheetRow,
         }),
       }).catch((err) => console.error("Google Sheet webhook error:", err.message));

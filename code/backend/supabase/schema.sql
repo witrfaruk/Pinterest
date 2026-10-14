@@ -1,7 +1,4 @@
--- ============================================================================
--- Supabase Schema & pg_cron Setup for Finmunt Pinterest Automation
--- Run this in your Supabase Dashboard -> SQL Editor
--- ============================================================================
+-- Supabase Schema & pg_cron Setup for Autonomous Pinterest Automation
 
 -- 1. Enable Required Extensions
 CREATE EXTENSION IF NOT EXISTS pg_cron;

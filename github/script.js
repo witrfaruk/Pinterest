@@ -101,13 +101,13 @@ document.addEventListener('DOMContentLoaded', () => {
       { type: 'info', prefix: '[Watcher]', text: 'FIFO Image scanner watching /Images directory...' },
       { type: 'warning', prefix: '[Queue]', text: 'Incoming raw image detected: "passive_income_strategy.png"' },
       { type: 'info', prefix: '[Vision AI]', text: 'Analyzing image visual vectors with Qwen2.5-VL...' },
-      { type: 'success', prefix: '[Classifier]', text: 'Classified: Board "Make Money" (ID: 1152640167071860781)' },
+      { type: 'success', prefix: '[Classifier]', text: 'Classified: Board "Make Money" (ID: 1234567890123456781)' },
       { type: 'info', prefix: '[Metadata]', text: 'Generated Title: "7 High-Yield Passive Income Strategies for 2026"' },
       { type: 'success', prefix: '[Auditor]', text: 'AI Verification Loop: PASS (Title <= 100, Desc <= 500, Alt <= 500)' },
       { type: 'warning', prefix: '[Stealth]', text: 'Scrubbed all EXIF, XMP, and AI generator parameters via Sharp' },
       { type: 'info', prefix: '[Cloud]', text: 'Uploaded clean buffer to Supabase Storage -> Public URL ready' },
       { type: 'success', prefix: '[Pinterest]', text: 'HTTP 201 Created -> Pin published live to Pinterest!' },
-      { type: 'info', prefix: '[Sheet]', text: 'Appended row to Google Sheets tracker (Finmunt)' },
+      { type: 'info', prefix: '[Sheet]', text: 'Appended row to Google Sheets tracker (example_pinterest)' },
       { type: 'muted', prefix: '[Cleanup]', text: 'Local file safely deleted from /Images (FIFO completed)' }
     ];
 

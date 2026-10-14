@@ -440,7 +440,7 @@ app.post('/api/upload/pin', requireAuth, upload.single('image'), async (req, res
       altText: altText ? altText.slice(0, 500) : '',
       tags: tags || '',
       boardId,
-      boardName: boardName || 'Finmunt'
+      boardName: boardName || 'General'
     });
 
     broadcastSSE('queued', queuedPin);

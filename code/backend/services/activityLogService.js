@@ -61,7 +61,7 @@ export class ActivityLogService {
         timestamp: timestampStr,
         filename: item.filename || item.title || 'Pin',
         title: item.title || item.filename,
-        boardName: item.boardName || item.board_name || 'Finmunt',
+        boardName: item.boardName || item.board_name || 'General',
         pinId: pinId,
         pinUrl: item.pinUrl || item.image_url || (pinId ? `https://www.pinterest.com/pin/${pinId}/` : null),
         status: 'COMPLETED'

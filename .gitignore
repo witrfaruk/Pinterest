@@ -21,8 +21,6 @@ code/backend/data/temp_uploads/
 
 Images/*
 images/*
-!Images/README.md
-!images/README.md
 
 test/
 code/backend/test/test_sandbox/

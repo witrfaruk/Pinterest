@@ -93,7 +93,7 @@ class PublisherEngine extends EventEmitter {
         await SpreadsheetLogger.recordUpload(finalRecord, uploadHistory.getAll());
 
         // Low queue check (send email if <= 5 pins remaining)
-        const remainingCount = supabaseStatus.count - 1;
+        const remainingCount = Math.max(0, supabaseStatus.count - 1);
         if (remainingCount <= 5) {
           await EmailAlertService.checkAndSendLowQueueAlert(remainingCount);
         }
@@ -106,6 +106,8 @@ class PublisherEngine extends EventEmitter {
       const nextImage = await ImageScanner.getNextPendingImage();
       if (!nextImage) {
         this.log(`[STEP 2] No images available in Supabase queue or local Images folder. Slot marked as SKIPPED.`, 'warning');
+        // Trigger critical 0-pin alert since both Supabase queue and local Images folder are empty
+        await EmailAlertService.checkAndSendLowQueueAlert(0);
         if (slotIndex !== null) {
           uploadHistory.recordSlotExecution(todayDate, slotIndex, slotTime, {
             status: 'SKIPPED',

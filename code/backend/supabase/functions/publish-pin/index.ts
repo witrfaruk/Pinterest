@@ -20,6 +20,13 @@ const ALERT_THRESHOLD = 5;
  * Send automated email alert when queue count drops to 5 or fewer pins
  */
 async function sendLowQueueAlert(remainingCount: number) {
+  if (!SMTP_USER || !SMTP_PASS || !ALERT_RECIPIENTS) {
+    console.error(
+      "[Alert Error] Cannot send low queue email: SMTP_USER, SMTP_PASS, or ALERT_RECIPIENTS is not configured in Supabase Edge Function Secrets. Please set them in Supabase Project Settings -> Edge Functions -> Secrets."
+    );
+    return;
+  }
+
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -29,10 +36,15 @@ async function sendLowQueueAlert(remainingCount: number) {
       },
     });
 
+    const isZero = remainingCount === 0;
+    const subject = isZero
+      ? `🚨 CRITICAL: Pinterest Queue is EMPTY (0 Pins Left)!`
+      : `⚠️ Pinterest Alert: Only ${remainingCount} Pin${remainingCount === 1 ? '' : 's'} Left in Queue!`;
+
     const mailOptions = {
       from: `"Pinterest Alert" <${SMTP_USER}>`,
       to: ALERT_RECIPIENTS,
-      subject: `⚠️ Pinterest Alert: Only ${remainingCount} Pin${remainingCount === 1 ? '' : 's'} Left in Queue!`,
+      subject,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
           <div style="display: flex; align-items: center; margin-bottom: 20px;">
@@ -43,10 +55,14 @@ async function sendLowQueueAlert(remainingCount: number) {
             </div>
           </div>
           
-          <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 6px; margin-bottom: 20px;">
-            <h3 style="margin: 0 0 8px 0; color: #991b1b; font-size: 16px;">Low Queue Warning: ${remainingCount} Pins Remaining</h3>
-            <p style="margin: 0; color: #7f1d1d; font-size: 14px; line-height: 1.5;">
-              The 24/7 cloud publishing queue is running low. There are only <strong>${remainingCount}</strong> scheduled pins left to publish.
+          <div style="background: ${isZero ? '#fef2f2' : '#fffbeb'}; border-left: 4px solid ${isZero ? '#ef4444' : '#f59e0b'}; padding: 16px; border-radius: 6px; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 8px 0; color: ${isZero ? '#991b1b' : '#92400e'}; font-size: 16px;">
+              ${isZero ? '🚨 Queue Completely Empty!' : `Low Queue Warning: ${remainingCount} Pins Remaining`}
+            </h3>
+            <p style="margin: 0; color: ${isZero ? '#7f1d1d' : '#78350f'}; font-size: 14px; line-height: 1.5;">
+              ${isZero
+                ? 'The 24/7 cloud publishing queue has <strong>0 scheduled pins</strong> remaining! Scheduled slots will be skipped until new images are added.'
+                : `The 24/7 cloud publishing queue is running low. There are only <strong>${remainingCount}</strong> scheduled pins left to publish.`}
             </p>
           </div>
 

@@ -10,18 +10,43 @@ import { BoardClassifier } from './boardClassifier.js';
 import { MetadataGenerator } from './metadataGenerator.js';
 import { AiVerifier } from './aiVerifier.js';
 import { SupabaseSyncService } from './supabaseSyncService.js';
+import { EmailAlertService } from './emailAlertService.js';
 
 class AutoQueueProcessor extends EventEmitter {
   constructor() {
     super();
     this.isProcessing = false;
     this.watchInterval = null;
+    this.queueMonitorInterval = null;
   }
 
   startWatcher(intervalMs = 10000) {
     if (this.watchInterval) clearInterval(this.watchInterval);
     this.watchInterval = setInterval(() => this.checkAndProcessNewImages(), intervalMs);
     console.log(`[AutoQueue] Background folder watcher started (Polling ${intervalMs / 1000}s)...`);
+
+    // Also start proactive queue monitor (checks Supabase queue every 60s for <= 5 pins)
+    this.startQueueMonitor(60000);
+  }
+
+  startQueueMonitor(intervalMs = 60000) {
+    if (this.queueMonitorInterval) clearInterval(this.queueMonitorInterval);
+    
+    // Immediate initial check
+    this.checkQueueAndAlert();
+    this.queueMonitorInterval = setInterval(() => this.checkQueueAndAlert(), intervalMs);
+    console.log(`[AutoQueue] Proactive Supabase queue monitor started (Checking every ${intervalMs / 1000}s)...`);
+  }
+
+  async checkQueueAndAlert() {
+    try {
+      const status = await SupabaseSyncService.getQueueStatus();
+      if (status && typeof status.count === 'number') {
+        await EmailAlertService.checkAndSendLowQueueAlert(status.count);
+      }
+    } catch (err) {
+      // Ignore network blips during background check
+    }
   }
 
   async checkAndProcessNewImages() {

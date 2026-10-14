@@ -14,6 +14,7 @@ import { SpreadsheetLogger } from './services/spreadsheetLogger.js';
 import { PinterestApiService } from './services/pinterestApiService.js';
 import { autoQueueProcessor } from './services/autoQueueProcessor.js';
 import { SupabaseSyncService } from './services/supabaseSyncService.js';
+import { EmailAlertService } from './services/emailAlertService.js';
 
 import crypto from 'node:crypto';
 import multer from 'multer';
@@ -322,14 +323,18 @@ app.get('/api/supabase/queue', requireAuth, async (req, res) => {
 });
 
 /**
- * Send a Test Low-Queue Email Alert
+ * Send a Test Low-Queue Email Alert (Supports both GET and POST)
  */
-app.post('/api/email/test', requireAuth, async (req, res) => {
+app.all(['/api/email/test', '/api/alert/test'], async (req, res) => {
   try {
-    const result = await EmailAlertService.checkAndSendLowQueueAlert(5, 10);
-    res.json(result);
+    const result = await EmailAlertService.sendTestAlert();
+    res.json({
+      success: result.success,
+      message: result.success ? 'Test email alert sent successfully' : 'Failed to send test email',
+      ...result
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

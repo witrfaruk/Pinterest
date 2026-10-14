@@ -222,5 +222,5 @@ npx supabase secrets set --env-file code/.env
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by <strong><a href="https://witrfaruk.vercel.app/social">Faruk</a></strong> • Engineered for 100% Autonomous Content Delivery</sub>
+  <sub>Built & Maintained with ❤️ by <strong><a href="https://witrfaruk.vercel.app/social">Md Faruk Abdulla</a></strong> (<strong>@witrfaruk</strong>) • Engineered for 100% Autonomous Content Delivery</sub>
 </div>

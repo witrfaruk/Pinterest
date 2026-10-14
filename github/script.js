@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
       link.addEventListener('click', () => {
         navMenu.classList.remove('nav-menu-open');
         mobileToggle.setAttribute('aria-expanded', 'false');
+      });
     });
   }
 

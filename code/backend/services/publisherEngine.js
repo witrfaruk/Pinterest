@@ -92,10 +92,11 @@ class PublisherEngine extends EventEmitter {
         // Log to Google Spreadsheet
         await SpreadsheetLogger.recordUpload(finalRecord, uploadHistory.getAll());
 
-        // Low queue check (send email if <= 5 pins remaining)
+        // Low queue check (reads threshold dynamically from ALERT_THRESHOLD in .env, default 10)
         const remainingCount = Math.max(0, supabaseStatus.count - 1);
-        if (remainingCount <= 5) {
-          await EmailAlertService.checkAndSendLowQueueAlert(remainingCount);
+        const threshold = EmailAlertService.getThreshold();
+        if (remainingCount <= threshold) {
+          await EmailAlertService.checkAndSendLowQueueAlert(remainingCount, threshold);
         }
 
         this.emit('published', finalRecord);

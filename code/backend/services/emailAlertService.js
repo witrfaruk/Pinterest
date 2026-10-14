@@ -21,11 +21,11 @@ export class EmailAlertService {
   }
 
   static getThreshold() {
-    return parseInt(process.env.ALERT_THRESHOLD || '5', 10);
+    return parseInt(process.env.ALERT_THRESHOLD || '10', 10);
   }
 
   /**
-   * Send an alert email if remaining pins in queue is <= threshold
+   * Send an alert email if remaining pins in queue is <= threshold (default 10)
    * Includes smart throttling to prevent inbox spamming while ensuring critical drop alerts get delivered.
    */
   static async checkAndSendLowQueueAlert(remainingCount, customThreshold = null, force = false) {
@@ -130,7 +130,9 @@ export class EmailAlertService {
    * Send a test email alert to verify SMTP delivery
    */
   static async sendTestAlert() {
-    return this.checkAndSendLowQueueAlert(3, 5, true);
+    const threshold = this.getThreshold();
+    const testCount = Math.max(1, threshold - 2);
+    return this.checkAndSendLowQueueAlert(testCount, threshold, true);
   }
 }
 

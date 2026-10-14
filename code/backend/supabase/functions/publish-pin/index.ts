@@ -14,10 +14,10 @@ const SUPABASE_BUCKET = Deno.env.get("SUPABASE_BUCKET") || "pinterest-queue";
 const SMTP_USER = Deno.env.get("SMTP_USER") || "";
 const SMTP_PASS = Deno.env.get("SMTP_PASS") || "";
 const ALERT_RECIPIENTS = Deno.env.get("ALERT_RECIPIENTS") || "";
-const ALERT_THRESHOLD = 5;
+const ALERT_THRESHOLD = parseInt(Deno.env.get("ALERT_THRESHOLD") || "10", 10);
 
 /**
- * Send automated email alert when queue count drops to 5 or fewer pins
+ * Send automated email alert when queue count drops to ALERT_THRESHOLD or fewer pins
  */
 async function sendLowQueueAlert(remainingCount: number) {
   if (!SMTP_USER || !SMTP_PASS || !ALERT_RECIPIENTS) {
@@ -76,7 +76,8 @@ async function sendLowQueueAlert(remainingCount: number) {
           </div>
 
           <div style="border-top: 1px solid #e2e8f0; padding-top: 14px; color: #94a3b8; font-size: 12px; text-align: center;">
-            Sent automatically by Supabase Cloud Engine to: ${ALERT_RECIPIENTS}
+            Sent automatically by Supabase Cloud Engine to: ${ALERT_RECIPIENTS}<br/>
+            Alert Threshold: &le; ${ALERT_THRESHOLD} pins
           </div>
         </div>
       `,

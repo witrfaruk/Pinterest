@@ -70,7 +70,7 @@
   <!-- Google Fonts: Space Grotesk + Plus Jakarta Sans + JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Space+Grotesk:wght@700;900&display=swap" rel="stylesheet">
   
   <!-- Neo-Brutalism Stylesheet -->
   <link rel="stylesheet" href="style.css">
@@ -116,7 +116,10 @@
     <nav class="navbar" aria-label="Main Navigation">
       <!-- 1. Logo -->
       <a href="javascript:void(0)" class="nav-brand" title="Pinterest Automation Home" data-scroll="top">
-        <img src="assets/logo.png" alt="Pinterest Automation Logo" class="nav-logo-img">
+        <picture>
+          <source srcset="assets/logo.webp" type="image/webp">
+          <img src="assets/logo.png" alt="Pinterest Automation Logo" class="nav-logo-img" width="120" height="44" loading="eager" decoding="async">
+        </picture>
       </a>
 
       <!-- Mobile Hamburger Toggle -->
@@ -162,66 +165,48 @@
   <!-- ==========================================
        HERO SECTION
        ========================================== -->
-  <section class="hero-section">
-    <div class="hero-grid">
-      <!-- Left Column: Pitch & CTAs -->
-      <div>
-        <div class="hero-pill-badge">
-          🚀 100% Free & Open Source
-        </div>
-        
-        <h1 class="hero-title">
-          Stop paying for AI Pins. <br>
-          <span class="highlight-red">Drop Images.</span> <br>
-          <span class="highlight-yellow">Auto Publish.</span>
-        </h1>
+  <!-- ==========================================
+       HERO SECTION (CLEAN CENTERED LAYOUT - NO SIDEBAR)
+       ========================================== -->
+  <section class="hero-section hero-centered">
+    <div class="hero-content">
+      <div class="hero-pill-badge">
+        🚀 100% Free & Open Source
+      </div>
+      
+      <h1 class="hero-title">
+        Stop paying for AI Pins. <br>
+        <span class="highlight-red">Drop Images.</span>
+        <span class="highlight-yellow">Auto Publish.</span>
+      </h1>
 
-        <p class="hero-desc">
-          An autonomous, self-hosted machine powered by <strong>Local Multimodal AI (Qwen2.5-VL)</strong>. 
-          Drop raw images into a folder &rarr; the local model analyzes the visual content &rarr; writes audited SEO metadata &rarr; and publishes them directly to Pinterest via the official v5 API. <strong>Zero cloud AI bills.</strong>
-        </p>
+      <p class="hero-desc">
+        An autonomous, self-hosted machine powered by <strong>Local Multimodal AI (Qwen2.5-VL)</strong>. 
+        Drop raw images into a folder &rarr; the local model analyzes the visual content &rarr; writes audited SEO metadata &rarr; and publishes them directly to Pinterest via the official v5 API. <strong>Zero cloud AI bills.</strong>
+      </p>
 
-        <!-- Main CTAs -->
-        <div class="hero-actions">
-          <a href="https://github.com/witrfaruk/Pinterest/archive/refs/heads/main.zip" id="download-zip-btn" class="btn-neo btn-primary" title="Download the full source code as a ZIP archive">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Download ZIP
-          </a>
+      <!-- Main CTAs -->
+      <div class="hero-actions">
+        <a href="https://github.com/witrfaruk/Pinterest/archive/refs/heads/main.zip" id="download-zip-btn" class="btn-neo btn-primary" title="Download the full source code as a ZIP archive">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download ZIP
+        </a>
 
-          <a href="javascript:void(0)" class="btn-neo btn-secondary" data-scroll="how-to-use">
-            ⚡ Quick Setup Guide
-          </a>
-        </div>
-
-        <!-- 1-Click Copy Command Box -->
-        <div class="quick-clone-box">
-          <span><span class="clone-code">$</span> git clone https://github.com/witrfaruk/Pinterest.git</span>
-          <button class="btn-copy-code" data-copy="git clone https://github.com/witrfaruk/Pinterest.git" title="Copy git clone command">
-            Copy
-          </button>
-        </div>
+        <a href="javascript:void(0)" class="btn-neo btn-secondary" data-scroll="how-to-use">
+          ⚡ Quick Setup Guide
+        </a>
       </div>
 
-      <!-- Right Column: Live Terminal Simulator -->
-      <div>
-        <div class="terminal-card">
-          <div class="terminal-header">
-            <div class="terminal-dots">
-              <span class="dot dot-red"></span>
-              <span class="dot dot-yellow"></span>
-              <span class="dot dot-green"></span>
-            </div>
-            <span class="terminal-title">publisherEngine.js — Node.js v20.x</span>
-            <span style="font-size: 0.8rem; color: #71717A;">LIVE STREAM</span>
-          </div>
-          <div class="terminal-body" id="terminal-stream">
-            <!-- Simulated logs auto-generated by script.js -->
-          </div>
-        </div>
+      <!-- 1-Click Copy Command Box -->
+      <div class="quick-clone-box">
+        <span><span class="clone-code">$</span> git clone https://github.com/witrfaruk/Pinterest.git</span>
+        <button class="btn-copy-code" data-copy="git clone https://github.com/witrfaruk/Pinterest.git" title="Copy git clone command">
+          Copy
+        </button>
       </div>
     </div>
   </section>
@@ -647,7 +632,10 @@ DASHBOARD_PASSWORD=your_dashboard_password</code>
   <footer class="footer">
     <div class="footer-inner">
       <div class="footer-left">
-        <img src="assets/logo.png" alt="Pinterest Automation Logo" class="footer-logo">
+        <picture>
+          <source srcset="assets/logo.webp" type="image/webp">
+          <img src="assets/logo.png" alt="Pinterest Automation Logo" class="footer-logo" width="120" height="44" loading="lazy" decoding="async">
+        </picture>
         <span class="footer-copy">
           © 2026 Md Faruk Abdulla • Released under the <strong>MIT License</strong>.
         </span>
